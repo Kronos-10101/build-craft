@@ -54,10 +54,10 @@ The skill lives in [`build-craft/`](build-craft/) and follows the spec layout (`
 
 ```bash
 # via skills.sh
-npx skills add veldore-aegon/build-craft --skill build-craft
+npx skills add Kronos-10101/build-craft --skill build-craft
 
 # or manual
-git clone https://github.com/veldore-aegon/build-craft
+git clone https://github.com/Kronos-10101/build-craft
 cp -r build-craft/build-craft ~/.claude/skills/
 ```
 
