@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+htmlcov/
+.coverage
+.venv/
+venv/
+
+# C / C++
+build/
+cmake-build-*/
+compile_commands.json
+*.o
+*.a
+*.so
+
+# Node
+node_modules/
+
+# Env & secrets — never commit these
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*secret*
+*credential*
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Logs
+*.log
