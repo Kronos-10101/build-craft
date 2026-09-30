@@ -42,6 +42,7 @@ The skill lives in [`build-craft/`](build-craft/) and follows the spec layout (`
 | `llm-app-patterns.md` | Wrappers vs frameworks, model routing/gateways, structured output, caching, fallbacks |
 | `project-structure.md` | Folder layouts, naming, branches, Conventional Commits, `.env` handling, lockfiles, changelogs |
 | `audit-methodology.md` | Scoping, order of operations (security → correctness → performance → maintainability → polish), severity levels, report format |
+| `planning-grill.md` | Task planning and allocation, implementation plan template, the Grill Me question bank and protocol |
 | `skill-sources.md` | Where to find skills: skills.sh, anthropics/skills, awesome lists, install methods |
 | `skill-vetting.md` | Security checklist before trusting a third-party skill (prompt-injection aware) |
 
