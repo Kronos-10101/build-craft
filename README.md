@@ -13,19 +13,33 @@ The skill lives in [`build-craft/`](build-craft/) and follows the spec layout (`
 | File | Covers |
 |---|---|
 | `python.md` | Style, typing (mypy strict), errors, logging, pytest, packaging, security, performance |
+| `python-internals.md` | How CPython runs (bytecode, GIL), profiling ladder, PyPy/Cython/Numba, real optimization order |
 | `c-language.md` | `-Wall -Wextra -Werror`, sanitizers, clang-tidy/cppcheck, CERT C memory safety, CMake, toolchain hardening flags |
+| `cpp-modern.md` | Modern C++ 17/20/23/26: RAII, move semantics, concepts, ranges, coroutines; low-level optimization (cache, SIMD, allocation-free) |
 | `javascript-typescript.md` | Strict tsconfig, zero-`any` discipline, ESLint flat config, zod at boundaries, vitest, supply chain |
 | `react-nextjs.md` | Next.js 16 + React 19: server-first components, data fetching, routing, Server Actions, images/fonts, auth, bundle discipline |
 | `libraries.md` | Best library picks in detail — Python, JS/TS, React ecosystem, C/C++, CSS, databases, auth/security, observability, infra — plus default stack picks |
+| `build-environments.md` | Docker, devcontainers, Nix, uv/conda, version managers, reproducible builds, dev/prod parity |
 | `web-frontend.md` | Semantic HTML, WCAG 2.2 AA, Core Web Vitals, responsive, SEO, assets, no-JS fallbacks |
 | `backend-api.md` | REST conventions, validation, OAuth2/JWT, rate limiting, pagination, idempotency, logging, health checks, 12-factor |
 | `system-design.md` | Scalability, CAP trade-offs, load balancing, monolith vs microservices, resilience, observability |
+| `system-design-deep.md` | HLD vs LLD: requirements, capacity estimation, SOLID, design patterns, concurrency models, whiteboard flow |
 | `databases.md` | Normalization, indexing, migrations (expand/contract), backups/PITR, pooling, N+1, isolation levels |
 | `managed-data-platforms.md` | Neon vs Supabase vs PlanetScale vs self-hosted: how to choose, pooling rules, branching, PITR, connection strings, cost heuristics |
+| `vector-databases.md` | Embeddings, chunking, pgvector/Qdrant/Pinecone/Weaviate, HNSW vs IVF, hybrid search, retrieval evals |
 | `security.md` | OWASP Top 10:2025, auth (Argon2id/NIST 800-63B), secrets, supply chain/SBOM, TLS, security headers, least privilege |
+| `offensive-security.md` | Attacker perspective: how SQLi/XSS/SSRF/RCE/phishing/privesc work and the concrete prevention for each |
+| `testing.md` | Test pyramid, unit/integration/contract/e2e, property-based, mutation, fuzzing, flaky-test discipline, CI strategy |
 | `optimization.md` | Profile-first discipline, Big-O review, caching strategy, query optimization, frontend budgets, load testing, measurable targets |
+| `hosting.md` | How servers work, hosting types and pricing models, how to choose, AI/GPU hosting |
 | `design-polish.md` | Typography, 8pt spacing, color/contrast, hierarchy, micro-interactions, empty/error/loading states, design tokens |
 | `design-distinct.md` | How to NOT look vibe-coded: the tells of generic AI sites and the concrete antidotes |
+| `llm-how-it-works.md` | Tokens, transformers/attention, pretraining/SFT/RLHF, decoding params, KV cache, hallucinations |
+| `ml-landscape.md` | Labs and flagship models, open vs closed weights, model classes, how to choose a model |
+| `ai-agents.md` | Agent loop, tools, memory types, planning; LangChain/LangGraph/CrewAI/AutoGen/smolagents picker |
+| `agent-patterns.md` | ReAct, ReWOO, Reflexion, Plan-and-Execute, multi-agent topologies, optimization levers, evals |
+| `mcp-servers.md` | Building MCP servers: tools/resources/prompts, transports, SDKs, auth, testing, security |
+| `llm-app-patterns.md` | Wrappers vs frameworks, model routing/gateways, structured output, caching, fallbacks |
 | `project-structure.md` | Folder layouts, naming, branches, Conventional Commits, `.env` handling, lockfiles, changelogs |
 | `audit-methodology.md` | Scoping, order of operations (security → correctness → performance → maintainability → polish), severity levels, report format |
 | `skill-sources.md` | Where to find skills: skills.sh, anthropics/skills, awesome lists, install methods |

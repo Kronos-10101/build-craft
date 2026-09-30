@@ -1,6 +1,6 @@
 ---
 name: "build-craft"
-description: "Build production-grade software of any kind — websites, backends, Python, C, system design, databases — applying security, performance optimization, design polish, project structure, and audit checklists. Audits existing codebases with severity-graded findings. Fetches missing skills from the internet on demand."
+description: "Build production-grade software of any kind — websites, backends, Python, C/C++, JS/TS, system design, databases — plus AI/ML: how LLMs work, agents, MCP servers, vector DBs. Applies security (including attacker perspective), testing, performance optimization, design polish, project structure, and audit checklists. Audits existing codebases with severity-graded findings. Fetches missing skills from the internet on demand."
 license: "MIT"
 metadata: { "version": "1.0.0" }
 ---
@@ -30,16 +30,29 @@ Read every reference file that applies **before** writing code. Do not rely on m
 |---|---|
 | Website / frontend UI | `references/web-frontend.md`, `references/design-polish.md`, `references/design-distinct.md` |
 | Backend / REST API | `references/backend-api.md`, `references/system-design.md` |
-| Python code | `references/python.md` |
+| Python code | `references/python.md`, `references/python-internals.md` |
 | C code | `references/c-language.md` |
+| Modern C++ (17/20/23/26), low-level optimization | `references/cpp-modern.md`, `references/c-language.md` |
 | JavaScript / TypeScript code | `references/javascript-typescript.md` |
 | React / Next.js app | `references/react-nextjs.md`, `references/javascript-typescript.md` |
 | Choosing libraries / tools / stack | `references/libraries.md` |
-| System architecture | `references/system-design.md` |
+| Build / dev environment management | `references/build-environments.md` |
+| System architecture | `references/system-design.md`, `references/system-design-deep.md` |
+| HLD / LLD, design interviews | `references/system-design-deep.md` |
 | Database schema / queries / migrations | `references/databases.md` |
 | Choosing a database platform (Postgres, Supabase, Neon…) | `references/managed-data-platforms.md` |
+| Vector DBs / embeddings / RAG | `references/vector-databases.md` |
 | Security review / hardening | `references/security.md` |
-| Speed / efficiency / scaling | `references/optimization.md` |
+| How attackers hack (offensive perspective) | `references/offensive-security.md`, `references/security.md` |
+| Testing strategy / test types | `references/testing.md` |
+| Speed / efficiency / scaling | `references/optimization.md`, `references/python-internals.md` |
+| Hosting / servers / GPU hosting | `references/hosting.md` |
+| How LLMs work | `references/llm-how-it-works.md` |
+| ML model landscape / choosing a model | `references/ml-landscape.md` |
+| Building AI agents | `references/ai-agents.md`, `references/agent-patterns.md` |
+| Optimizing agents, agent evals | `references/agent-patterns.md` |
+| Building MCP servers | `references/mcp-servers.md` |
+| LLM app patterns (routing, caching, gateways) | `references/llm-app-patterns.md` |
 | Look and feel / UX polish | `references/design-polish.md`, `references/design-distinct.md` |
 | Repo layout, naming, branches, commits, env config | `references/project-structure.md` |
 
