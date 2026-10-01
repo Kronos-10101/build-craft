@@ -46,7 +46,7 @@ The skill lives in [`build-craft/`](build-craft/) and follows the spec layout (`
 | `skill-sources.md` | Where to find skills: skills.sh, anthropics/skills, awesome lists, install methods |
 | `skill-vetting.md` | Security checklist before trusting a third-party skill (prompt-injection aware) |
 
-**Scripts** (`scripts/`) — `fetch-skill.sh` (download + verify + red-flag-scan a skill from GitHub, pinned to a commit SHA), `audit-repo.sh` (run installed linters/scanners + high-signal greps), `check-skill.sh` (validate any `SKILL.md` against the spec).
+**Scripts** (`scripts/`) — `fetch-skill.sh` (download + verify + red-flag-scan a skill from GitHub, pinned to a commit SHA), `audit-repo.sh` (run installed linters/scanners + high-signal greps), `readiness-audit.mjs` (zero-dependency static analysis audit: secrets, backend resilience, anti-AI-slop craft, ethical UI, a11y, perf/SEO), `check-skill.sh` (validate any `SKILL.md` against the spec).
 
 **Templates** (`assets/templates/`) — `pyproject.toml` (ruff + mypy strict + pytest-cov), `.clang-format`, `.gitignore`, `.env.example`.
 
@@ -70,6 +70,46 @@ python3 build-craft/scripts/check-skill.sh build-craft/SKILL.md
 ## The self-fetching bit
 
 The skill teaches the agent to fetch skills itself: discover via `npx skills find <query>` or the registries in `references/skill-sources.md`, vet per `references/skill-vetting.md` (read everything, map data flows, pin to SHA — third-party skills are untrusted code), then install with `scripts/fetch-skill.sh`.
+
+## Production Readiness Audit
+
+`build-craft/scripts/readiness-audit.mjs` is a zero-dependency static analysis scanner (node stdlib only — nothing to install) that gates a repo on 46 concrete production rules across seven categories:
+
+- **Security & Secrets** — hardcoded API keys/secret tokens, unsanitized `dangerouslySetInnerHTML`/`v-html`, wildcard CORS with credentials, error stacks leaked to clients, MD5/SHA-1 password hashing, SQL injection via string interpolation
+- **Backend & Resilience** — unbounded DB queries (missing `LIMIT`/`take`), unindexed `SELECT *`, `fetch()` without timeouts, silently swallowed rejections/empty catches, submit buttons with no pending state, payment mutations without idempotency keys, unrestricted upload handlers, unchecked fetch response status
+- **Design & Craft Anti-Slop** — colored icon boxes, `animate-ping` radar dots, clichéd AI marketing headlines, fabricated social proof, dead placeholder links, Lorem Ipsum, purple/pink gradients, stacked hover effects, fake verification badges, emoji-polluted clipboard copy, uniform card grids, oversized CTAs, bouncing scroll indicators, unearned authority badges
+- **Ethical UI** — confirmshaming, fake urgency countdowns, pre-checked marketing consent, fabricated scarcity signals
+- **Content Formatting** — raw text dumps (`whitespace-pre-line`), justified text
+- **Accessibility (WCAG 2.2 AA)** — `<img>` without `alt`, `onClick` on non-interactive elements, `outline-none` without a focus ring, icon-only buttons without labels, unlabeled form inputs
+- **Performance & SEO** — raw `<img>` in Next.js projects, unstripped `console.log`, lucide barrel imports, unresolved TODO/FIXME/HACK comments, hardcoded copyright years, missing viewport meta in app entrypoints
+
+Each finding is reported with rule ID, severity (BLOCKER / WARNING / NOTICE), file, line, code snippet, and a concrete remediation — plus a 0–100 readiness score and a per-category breakdown.
+
+```bash
+# audit the current directory (default target is cwd)
+node build-craft/scripts/readiness-audit.mjs
+
+# audit a specific repo
+node build-craft/scripts/readiness-audit.mjs /path/to/project
+
+# scan only one category (security, resilience, craft, ethical, formatting, a11y, perf)
+node build-craft/scripts/readiness-audit.mjs /path/to/project --category security
+
+# skip extra directories
+node build-craft/scripts/readiness-audit.mjs /path/to/project --ignore-dir docs,examples
+
+# machine-readable report for pipelines
+node build-craft/scripts/readiness-audit.mjs /path/to/project --json
+```
+
+CI usage — fail the build on blockers, or fail on anything at all:
+
+```yaml
+- run: node build-craft/scripts/readiness-audit.mjs . --ci --json
+  # exits 1 if any BLOCKER exists; use --strict to also fail on WARNINGs
+```
+
+Like `audit-repo.sh`, this is a triage aid: the patterns are heuristic (a hardcoded key can be a test fixture, a `console.log` can be intentional) — review every hit against the domain checklists in `references/` before treating it as a verdict.
 
 ## License
 

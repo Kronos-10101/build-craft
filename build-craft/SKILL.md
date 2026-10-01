@@ -72,6 +72,7 @@ Grilling is not stalling. Two tight rounds beat ten vague ones. If the user says
 - Run the test suite (new tests per the plan's test section, plus existing).
 - Run the linters/typecheckers the checklists demand.
 - Execute `scripts/audit-repo.sh <repo-path>` and treat its output as findings, not noise.
+- For web apps, also run `node scripts/readiness-audit.mjs <project-path> --ci` — the 46-rule production-readiness gate (security, resilience, anti-slop craft, ethical UI, formatting, a11y, perf/SEO). No critical blockers ship.
 
 ### P-5. Report
 
