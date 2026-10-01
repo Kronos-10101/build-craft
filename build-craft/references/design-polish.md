@@ -152,6 +152,7 @@ Scope: the verifiable craft system behind refined interfaces — typography, spa
 - [ ] Repeated patterns are a single shared component with state variants (Default/Hover/Pressed/Focus/Disabled) — no one-off restyled copies.
 - [ ] Mobile-first; spot-check 320/375/768/1024/1440/1920; no horizontal scroll at any viewport.
 - [ ] Shadow tokens use brand-tinted oklch (e.g. `oklch(20% 0.02 var(--hue) / 0.08)`) instead of black-alpha — shadows pick up the theme instead of fighting it.
+- [ ] Elevation is multi-layered, never one harsh `box-shadow`: each elevation token stacks 2–3 neutral layers (tight ambient + soft cast, e.g. `0 1px 2px …, 0 4px 12px …`) in brand-tinted oklch — a single harsh `0 8px 24px rgba(0,0,0,0.25)` or a neon `box-shadow` glow on dark backgrounds fails (see the dark-background glow tell in design-distinct.md).
 
 ## Curated design resources
 

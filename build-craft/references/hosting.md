@@ -48,13 +48,16 @@ The request lifecycle from DNS to database, every hosting model with 2026 price 
 - [ ] Bill drivers: requests ($0.20 per 1M) + compute (GB-seconds: $0.0000166667/GB-s x86, ~20% less on ARM) after a permanent free tier of 1M requests + 400K GB-s/mo — a 1 GB function running 100 ms costs ~$0.0000017 per invocation.
 - [ ] The real bill is rarely just Lambda: API Gateway HTTP API adds ~$1.00/1M requests, CloudWatch Logs ingestion (~$0.50/GB) can exceed compute cost at scale, and VPC-attached functions may need a NAT gateway (~$0.045/hr + $0.045/GB).
 - [ ] Cold starts are real: ~1–3 s p95 for Node/Java without SnapStart; keep functions warm with provisioned concurrency or accept it for async workloads.
+- [ ] Cold-start mitigation beyond warming: keep packages small (tree-shake, minify, strip dev deps — cold start grows with code size); prefer lightweight runtimes (Node/Python/Go over JVM/large .NET) where starts matter; lazy-init heavy clients on first use inside a warm container rather than at import when import cost is high.
+- [ ] Serverless backends never open per-invocation database connections — a cold-start storm exhausts the DB connection limit: route Postgres through a pooler (PgBouncer/Supavisor in transaction mode), or a managed edge pooler (Cloudflare Hyperdrive for existing Postgres/MySQL from Workers, Prisma Accelerate for Prisma Postgres over HTTP), or use an HTTP-native driver (Neon) instead of a TCP client; keep transactions short — long ones block transaction-mode pooling.
 - [ ] Pick for: event-driven glue, webhooks, cron-like jobs, spiky unpredictable traffic. Skip for: sustained high-throughput — a $5 VPS beats per-request billing at constant load. Set billing alerts: per-request pricing has no ceiling.
 
 ## Edge compute (Cloudflare Workers and friends)
 
 - [ ] Code runs in V8 isolates at 300+ PoPs, milliseconds from the user, with effectively zero cold start (<5 ms).
 - [ ] Bill drivers: requests + CPU time, no egress fees. Workers Paid ($5/mo) includes 10M requests + 30M CPU-ms; overage ~$0.30/1M requests + ~$0.02/1M CPU-ms. Free tier is 100K requests/day with a hard stop, not graceful overage.
-- [ ] Constraints are the price of speed: 128 MB memory, CPU-time limits per invocation, 50 subrequests/invocation on free (10K paid), Web APIs only — no `fs`, no native modules, no persistent TCP to classic databases (use HTTP/WebSocket drivers).
+- [ ] Constraints are the price of speed: 128 MB memory, CPU-time limits per invocation, 50 subrequests/invocation on free (10K paid), Web APIs only — no `fs`, no native modules, no persistent TCP to classic databases (use HTTP/WebSocket drivers or a pooler like Hyperdrive).
+- [ ] Keep bundles within script size limits (checked 2026-10-01: 3 MB gzip on Free, 10 MB on Paid, 64 MB uncompressed ceiling — the old 1 MB free limit is gone; verify against the current limits page before shipping); heavy deps (Prisma query engine, sharp, puppeteer) go to regional compute, not the edge.
 - [ ] CPU time (not request count) is the bill driver for compute-heavy workers — an I/O-bound gateway at 200M requests costs pocket change; a JSON-transforming worker at the same volume costs an order of magnitude more.
 - [ ] Pick for: auth, A/B tests, personalization, API gateways, anything latency-sensitive and stateless. Pair with regional compute (Lambda/containers) and an edge-native store (KV/D1/R2) for heavy lifting.
 
@@ -127,3 +130,6 @@ The request lifecycle from DNS to database, every hosting model with 2026 price 
 - https://github.com/sunchit/systemdesigninterviewpreparationseries/blob/HEAD/Day59_Deployment_Strategies_Decision_Tree.md — blue-green vs canary vs rolling decision tree (costs, rollback, DB gotcha)
 - https://github.com/mochrzlf/aegis-forge/blob/HEAD/docs/deployment.md — deployment strategy table, /healthz vs /readyz, automated rollback triggers, immutable digests
 - https://github.com/sandeepk24/learn-devops-playbook/blob/HEAD/sre/canary-vs-blue-green-vs-rolling-deployments.md — blue-green 2× cost example, canary phase structure, when-not-to-use guidance
+- https://github.com/0xdarkmatter/claude-mods/blob/HEAD/skills/cloudflare-ops/SKILL.md — Workers script size limits 3 MB (free) / 10 MB (paid) gzipped (checked 2026-10-01)
+- https://github.com/workersphp/core/blob/HEAD/docs/research/02-workers-platform-limits.md — Workers platform limits, verified Aug 2026 (64 MB uncompressed ceiling)
+- https://developers.cloudflare.com/hyperdrive/ — Hyperdrive edge connection pooling for Postgres/MySQL from Workers

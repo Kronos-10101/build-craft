@@ -66,6 +66,8 @@ Many machines do not have C++23/C++26-capable compilers. Never recommend a featu
 
 - [ ] Template parameters constrained with concepts (`template<std::integral T>`) instead of bare `typename T` — errors at the call site, not 200 lines deep.
 - [ ] Define a concept when the same constraint repeats ≥3 times; use standard concepts (`std::ranges::range`, `std::convertible_to`) before inventing new ones.
+- [ ] Debug constraint failures at the point of use, not 200 lines deep: put explicit `requires` clauses on the template and add a `static_assert` with a plain-language message naming the failed requirement — raw concept-failure spew is unactionable; named concepts make the failed constraint readable in diagnostics (checked 2026-10-01).
+- [ ] Prefer constrained abbreviations (`template<std::integral T>`) over trailing `requires` when the constraint is simple; use the full `requires` clause when the failure message needs to name the specific property (`requires { { t.size() } -> std::convertible_to<std::size_t>; }`).
 - [ ] Algorithms over raw loops: `std::ranges::sort/filter/transform` with views (`views::filter | views::transform`) — lazy, composable, no intermediate containers.
 - [ ] Never name the iterator pair when a range overload exists; prefer `ranges::to<std::vector>()` (C++23) over manual `push_back` loops.
 
@@ -98,7 +100,7 @@ Many machines do not have C++23/C++26-capable compilers. Never recommend a featu
 - [ ] Data-oriented layout: struct-of-arrays over array-of-structs when loops touch a subset of fields; sequential access for prefetcher friendliness.
 - [ ] Hot paths allocation-free: pre-allocate (`reserve`, arenas/pools) at init; no `new`/`make_unique`/unreserved `push_back` inside the loop.
 - [ ] Skewed branches hinted `[[likely]]`/`[[unlikely]]` (C++20); `[[assume]]` (C++23) where you've proven the invariant; unpredictable branches in hot loops replaced with branchless math/cmov.
-- [ ] SIMD: write simple loops the compiler can auto-vectorize (contiguous, no aliasing — `__restrict__` where proven) before hand-writing intrinsics; check the generated assembly.
+- [ ] SIMD: write simple loops the compiler can auto-vectorize (countable trip count, no early exits or calls in the body, stride-1 contiguous access, no aliasing — `__restrict__` where proven, aligned data via `std::assume_aligned`/`aligned_alloc`) before hand-writing intrinsics; `#pragma omp simd` when the compiler hesitates, loop-unroll pragmas only after measuring; confirm vectorization with `-fopt-info-vec-missed` and check the generated assembly.
 - [ ] `std::bit_cast` over `memcpy` punning; `std::byteswap` (C++23) over hand-rolled byte swaps.
 
 ## Views & formatting pitfalls

@@ -27,7 +27,7 @@ Concrete pass/fail rules for the TypeScript language and its toolchain: compiler
 - [ ] No non-null assertions (`!`) on values that come from indexing, parsing, or I/O; narrow with an `if` instead.
 - [ ] `catch` clause variables treated as `unknown` (`useUnknownInCatchVariables`) and narrowed before use.
 - [ ] String-literal unions over `enum` (`type Status = "active" | "inactive"`); `as const` objects when runtime values are needed (and no `enum` at all if Node type-stripping runs the code).
-- [ ] Branded types for IDs that must not mix: `type UserId = string & { __brand: "UserId" }`.
+- [ ] Branded/nominal types for IDs that must not mix: `type UserId = string & { readonly __brand: unique symbol }` (and a distinct `declare const` brand per ID type) — plain string aliases let `UserId` and `OrderId` silently interchange; each domain ID gets its own brand plus constructor/parse functions.
 - [ ] Public function signatures fully annotated (params + returns); published libraries generate `.d.ts` (`declaration: true`).
 
 ## Type-check performance at scale
