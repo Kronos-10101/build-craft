@@ -35,6 +35,7 @@ Pass/fail checks for semantic HTML, WCAG 2.2 AA accessibility, mobile ergonomics
 - [ ] Form errors: on failed submit, focus moves to an error summary region listing every error with links to the offending fields (3.3.1, 3.3.3).
 - [ ] Timeouts: users are warned before any session or data timeout and given a way to extend it (2.2.1, 2.2.6).
 - [ ] `prefers-reduced-motion` disables parallax, smooth scroll, view transitions, and autoplay animation; `prefers-reduced-transparency` disables backdrop blur/frosted-glass; video captioned, audio transcribed.
+- [ ] Every animated state change ships a static cue — animation is enhancement, never the only signal; under `prefers-reduced-motion` the state stays fully legible (better-ui, checked 2026-10-02).
 - [ ] Focus order matches visual order — CSS reordering (`order`, grid placement) doesn't scramble Tab order.
 - [ ] Automation floor: axe-core/Lighthouse catch roughly a third of issues — manual keyboard and screen-reader (NVDA/VoiceOver) passes remain mandatory.
 
@@ -65,6 +66,7 @@ Pass/fail checks for semantic HTML, WCAG 2.2 AA accessibility, mobile ergonomics
 - [ ] TTFB discipline: HTML document response ≤600ms on the landing route (server timing audited, not assumed).
 - [ ] LCP: server response fast; critical CSS inlined or server-rendered; render-blocking third-party scripts deferred or eliminated; hero image preloaded (`<link rel="preload" as="image" fetchpriority="high">`, responsive variant: `imagesrcset`/`imagesizes`), LCP element carries `fetchpriority="high"`.
 - [ ] INP: no interaction handler blocks the main thread >50ms; long work chunked with `scheduler.yield()`/`setTimeout(0)` splits; CPU-heavy transforms (markdown parsing, heavy sorting, image manipulation) moved to web workers; input search fields debounced 200–300ms; scroll/resize listeners `passive: true`; no forced synchronous layout inside handlers; low-priority work via `requestIdleCallback`.
+- [ ] High-frequency interactions (hover, drag, scroll scrub) keep visual feedback ≤150ms so the UI feels attached to the input — long transitions on continuous input are perceived as lag (better-ui, checked 2026-10-02).
 - [ ] CLS: explicit `width`/`height` (or CSS `aspect-ratio`) on every image, video, iframe, and embed; dynamic slots (banners, notices, third-party widgets) reserve min-height matching final dimensions; skeletons match final card geometry exactly; fonts use `font-display: swap` with `size-adjust`/metric-override fallbacks; critical fonts preloaded with correct `as`/`crossorigin`; offscreen `content-visibility: auto` reserves space via `contain-intrinsic-size`.
 - [ ] Third-party scripts deferred/async, each with an owner and a purpose, and their INP/LCP impact measured in field data.
 - [ ] Third-party embeds (video, maps, chat widgets) load behind a click-to-play facade — no heavy embed loads before user intent.
@@ -168,6 +170,7 @@ Pass/fail checks for semantic HTML, WCAG 2.2 AA accessibility, mobile ergonomics
 - [ ] Images: AVIF → WebP → original fallback via `<picture>`; `srcset` with accurate `sizes` (an omitted `sizes` makes the browser assume `100vw` and can fetch the largest file); intrinsic dimensions close to the largest displayed size; AVIF quality ~75–85; AVIF decode is CPU-heavier — weigh file size against decode cost on low-end devices.
 - [ ] Explicit `width`/`height` (or CSS `aspect-ratio`) on all images and video; hero LCP image eager with `fetchpriority="high"` and preloaded — never lazy-loaded; below-the-fold images and iframes get `loading="lazy"` (+ `decoding="async"` for images); zero uncompressed SVGs or raw camera PNGs/JPEGs.
 - [ ] Icons as inline SVG (`aria-hidden`, `focusable="false"`, SVGO-optimized, `currentColor` theming); never SVG for photographs or raster-inside-SVG.
+- [ ] Animated icon entrances use small fixed values (scale 0.25→1, opacity 0→1, blur 4px→0) — no generic fade-and-rise on every glyph (better-ui, checked 2026-10-02).
 - [ ] Video as adaptive-bitrate HLS/DASH with multiple renditions, always with a `poster` frame; `preload="none"` until user intent.
 - [ ] Every preload matches what the page actually fetches — unused preloads removed; preconnect limited to origins the page really uses (over-hinting is measurable performance debt).
 - [ ] Fonts: woff2 only, subsetted to the glyph ranges in use, `font-display: swap`; no system-fallback flash on the hero.
@@ -270,3 +273,4 @@ Note: bfcache eligibility and the `no-store` ban are the most-missed 2026 items 
 - https://github.com/michealtestimony046-glitch/frontend-first-view/blob/HEAD/docs/seo-aeo-autonomous-research.md — Google's generative-AI search guidance (foundational SEO, no llms.txt, structured data not required)
 - http://dev.to/shreysaraswatweb/frontend-performance-in-2026-the-techniques-that-actually-move-the-needle-now-445j — speculation rules as MPA-only, Chromium-only caveats
 - Instagram community checklists (udayan.builds, yatesvids, okaashish, aj.on.ai, swiperightai), Oct 2026 — post-launch ops and launch-sweep items; treated as community hygiene checklists, not primary documentation. Rank promises ("rank #1 by Friday"), backlink-from-Forbes claims, and the blanket "AI content" ban were reframed or dropped — see the scope note under Post-launch operations.
+- https://github.com/jakubkrehel/skills — `better-ui` skill (MIT): static-cue rule for animated state changes, ≤150ms feedback on high-frequency interactions, icon entrance values (checked 2026-10-02)
