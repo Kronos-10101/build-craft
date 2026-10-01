@@ -29,12 +29,17 @@ An LLM outputs the statistical median of its training data: Tailwind docs exampl
 - [ ] No fake `animate-ping` radar dots on static badges, no bouncing scroll mouse/chevron in the hero — solid 6px dots only for real status; pulsing is reserved for actual live network/streaming transfers; users know how to scroll.
 - [ ] No fake company avatars (two-letter initials in colored squares) or generic clip-art logos (graduation cap, briefcase, stethoscope) — use a clean typographic wordmark; never invent colored logo stickers.
 - [ ] No dead ends in production: `href="#"` links, non-submitting forms, default framework favicons, raw `*.vercel.app` domains.
+- [ ] No 2026 pastel-card combo: cream background + a matrix of identical rounded cards with colored (usually orange) borders, soft gradient fills, and hollow copy ("Unlock your potential", "All your tools. One simple dashboard") — reads polished for one screenshot, identical across ten products; vary the cards' structure, borders, and weight by real content.
+- [ ] No low-contrast hero text color: the headline set in washed-out gray on the cream background is the faded-median look; the H1 carries full contrast against its surface, always.
+- [ ] No builder badges or "Edit with …" tags left in production: strip Lovable/Vercel/Framer/hosting watermarks, editor iframes, and template credits before shipping — a watermark is a confession of origin.
 
 ## Type tells — the 2026 rotation
 
 - [ ] No Inter at weight 700 with `-0.02em` tracking as the default display style — the median-AI headline formula; try Inter at 500/400 and let size do the work, or replace the face entirely.
 - [ ] Not the 2026 rotation as the new default: Inter → Geist (itself overused) → Space Grotesk → Instrument Serif → Fraunces. Steering off Inter and landing on Fraunces is "the same non-decision wearing better clothes" — an italic-serif hero on a SaaS landing page is generic taste, not differentiation (checked 2026-09-30).
 - [ ] No single font for everything — pair one display face with character and one workhorse text face (max 2 families); one face doing both jobs reads as never-styled.
+- [ ] No cursive or script display font as the personality shortcut — a script headline on a SaaS page is the same non-decision as the 2026 font rotation; script faces earn their place only in genuinely editorial or luxury registers.
+- [ ] No default-font text-only "logo": the product name typed in body font with zero treatment is not a wordmark — a wordmark needs a designed decision (weight, tracking, case, custom letterforms) or an actual mark; plain text in Inter is the unstyled default.
 - [ ] No hero eyebrow pill chip ("✨ Introducing", "New", "Beta") above the giant headline — fold the kicker into the headline or drop it.
 - [ ] No tiny uppercase tracked labels above *every* section heading — repeated kickers are structural scaffolding made visible; use eyebrows sparingly, only when they add information.
 - [ ] No decorative monospace captions scattered for "hacker vibe" — reserve mono for actual code/data or an intentional brutalist register.
@@ -56,6 +61,7 @@ An LLM outputs the statistical median of its training data: Tailwind docs exampl
 - [ ] No single full-width gradient CTA banner jammed right before the footer — the final ask should grow out of the page's argument, not the template's slot.
 - [ ] No sticky nav in the universal logo-left / links-center / CTA-right formation, and no 4-column mega footer regardless of actual link count — design chrome around real content.
 - [ ] No raw-text wall dumps: long-form content never shipped as a single `whitespace-pre-line` block — headers, bullets, and paragraphs are detected and rendered in typographic tiers (formatting standard in design-polish.md).
+- [ ] No single one-page site as the entire product presence when the product deserves routes: docs, pricing, contact, and legal pages get real URLs — one endless scrolling page for a real product is the median template, and it drags the footer-nav, orphan-page, and SEO tells down with it.
 
 ## Component and interaction tells
 
@@ -236,6 +242,8 @@ Run this pass on every generated page before shipping:
 - [ ] Count the tells: 0–1 surviving tells is clean, 2–3 is the warning zone, 4+ is full slop — rewrite with intentional decisions.
 
 ## Sources
+
+Community checklists from Instagram reels (Oct 2026) contributed the pastel-card combo, low-contrast hero text, builder-badge, cursive-font, default-font-logo, and one-page-site tells — treat these as pattern observations from practitioner content, not primary documentation: yatesvids ("20 vibecoded website giveaways"), aj.on.ai ("30 reasons your site looks vibecoded"), swiperightai ("Sign 2: Rounded cards everywhere"), udayan.builds ("10 things to do right after your website goes live"), okaashish ("11 things Claude should check in your vibe coded website").
 
 - https://www.925studios.co/blog/ai-slop-web-design-guide
 - https://github.com/blakecyze/mimesis/blob/HEAD/research/research-design.md

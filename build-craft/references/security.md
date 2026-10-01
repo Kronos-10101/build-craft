@@ -1,6 +1,6 @@
 # Security — production checklist
 
-Concrete checks mapped to OWASP Top 10:2025 (final numbering — A01 Broken Access Control through A10 Mishandling of Exceptional Conditions), plus the OWASP API Top 10:2023, auth (passkeys, OIDC, JWT hardening), LLM application security, secrets, 2026 supply-chain practice (SLSA/Sigstore), TLS, headers, post-quantum readiness, data protection, and least privilege (checked 2026-09-30).
+Concrete checks mapped to OWASP Top 10:2025 (final numbering — A01 Broken Access Control through A10 Mishandling of Exceptional Conditions), plus the OWASP API Top 10:2023, auth (passkeys, OIDC, JWT hardening), LLM application security, secrets, 2026 supply-chain practice (SLSA/Sigstore), TLS, headers, post-quantum readiness, data protection, and least privilege (checked 2026-10-01).
 
 ## OWASP Top 10:2025 — concrete checks (final edition)
 
@@ -161,6 +161,12 @@ Applies to any app that sends transactional email — forged mail from your doma
 - [ ] Tag managers and analytics SDKs are gated behind the consent state — consent mode defaults to denied and upgrades to granted only after affirmative opt-in (GDPR); under CCPA/CPRA the opt-out immediately stops selling/sharing and suppresses targeted trackers.
 - [ ] Consent choices are persisted and re-prompted only on policy change, not on every visit; the banner never uses dark patterns (see the Ethical UI section below) and closing the banner without choosing equals "reject", not silent consent.
 - [ ] Data subject requests (access, erasure, portability) have a documented intake path and owner; the 30/45-day response clocks are tracked, not aspirational.
+- [ ] Third-party tracker inventory: every third-party script, pixel, embed, and SDK is inventoried with its owner, purpose, data shared, and consent category; anything without a purpose is removed; the inventory is re-audited on every release.
+
+### Business identity & form consent
+
+- [ ] Legal imprint: real business name, registered or physical address, contact email and phone, and company registration / VAT number where the jurisdiction requires it (EU Impressumspflicht) — linked from the footer on every page.
+- [ ] Per-form consent: every form collecting personal data states what is collected and why, links the privacy policy, and keeps marketing opt-ins as separate unchecked checkboxes — consent is per purpose, never bundled into the submit button.
 
 ### Terms & commercial policies
 

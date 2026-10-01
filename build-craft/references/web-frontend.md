@@ -1,6 +1,6 @@
 # Web Frontend — production checklist
 
-Pass/fail checks for semantic HTML, WCAG 2.2 AA accessibility, mobile ergonomics, Core Web Vitals, technical SEO, asset optimization, and no-JS fallbacks — each verifiable by inspection, DevTools, or a command (version-sensitive claims dated, checked 2026-09-30).
+Pass/fail checks for semantic HTML, WCAG 2.2 AA accessibility, mobile ergonomics, Core Web Vitals, technical SEO, asset optimization, and no-JS fallbacks — each verifiable by inspection, DevTools, or a command (version-sensitive claims dated, checked 2026-10-01).
 
 ## Semantic HTML & document structure
 
@@ -172,6 +172,18 @@ Pass/fail checks for semantic HTML, WCAG 2.2 AA accessibility, mobile ergonomics
 - [ ] Fonts: woff2 only, subsetted to the glyph ranges in use, `font-display: swap`; no system-fallback flash on the hero.
 - [ ] No dependency imported for a single utility — bundle visualizer run on every build and tree-shaking verified, not assumed.
 
+## Launch content & interaction sweep
+
+Run after the build is feature-complete, before the pre-ship verification suite.
+
+- [ ] Author / trust signals: content pages show the author's name, role/credentials, and photo; a `Person` schema links the author; an "About" page documents who is behind the site.
+- [ ] Breadcrumbs: visible breadcrumb trail on deep pages, matching the `BreadcrumbList` JSON-LD exactly.
+- [ ] Logo in the header links to `/`; phone numbers are `tel:` links; email addresses are `mailto:` links.
+- [ ] Placeholder purge: zero lorem ipsum, "TODO", "coming soon", or framework default text anywhere public — view-source included.
+- [ ] Unused nav/footer items removed; no dead `href="#"` links; every link resolves.
+- [ ] Every state-changing action shows a success confirmation (toast or inline message); failures show an actionable error with a retry — no silent submits.
+- [ ] No mass-produced thin or unedited AI content: every public page is genuinely helpful, accurate, and human-reviewed. Google's bar is helpful vs. unhelpful content, not human vs. AI authorship.
+
 ## Pre-ship verification suite
 
 Run this standardized audit suite before any web release is marked "done" — every command below must pass with zero blockers:
@@ -209,6 +221,20 @@ npx link-checker https://yourdomain.com --recurse
 - [ ] Production scorecard produced per release: ✅ Passed / ⚠️ Warning (user decision or non-blocking polish) / 🚫 Blocked (critical fix required before launch) / ➖ N/A (documented reason).
 - [ ] All 🚫 blockers fixed before delivery; warnings triaged with an owner and a date.
 
+## Post-launch operations (first 48 hours)
+
+Scope note: these are technical-hygiene gates. No checklist guarantees rankings — treat "rank #1 by Friday" style promises as marketing, not engineering.
+
+- [ ] Google Search Console: property verified (DNS record or HTML file), sitemap submitted, coverage report clean — zero "excluded by `noindex`" on pages meant to rank.
+- [ ] Bing Webmaster Tools: site verified, sitemap submitted.
+- [ ] `robots.txt` live-check: `curl -s https://domain.com/robots.txt` grants Googlebot/Bingbot access to public routes and references the sitemap location; the AI-crawler policy is a deliberate choice, not a copy-paste default.
+- [ ] Googlebot access check: `curl -s -A "Googlebot" https://domain.com/key-route` returns 200 with semantic content — not blocked, not a soft 404.
+- [ ] Analytics + RUM live: pageviews flowing and `web-vitals` field data landing in the analytics pipeline — verified with a real visit, not just the snippet being present.
+- [ ] PageSpeed Insights run on the landing and key conversion routes (mobile and desktop); the field-data baseline recorded so the next release has something to beat.
+- [ ] Broken-link scan clean against production; redirect chains audited (single hop max); orphan audit: every public page reachable from nav or an internal link — no orphans except deliberate ones (documented campaign pages).
+- [ ] Re-run cadence: link, redirect, and coverage checks scheduled weekly (CI cron or calendar reminder), not treated as one-off.
+- [ ] Conditional — local businesses only: Google Business Profile claimed with real address and hours; listed on relevant review sites. Pure digital products mark this ➖ N/A with reason.
+
 ## Progressive enhancement / no-JS
 
 - [ ] Core content and critical journeys (read, search, contact/checkout, auth) work with JavaScript disabled; where JS is mandatory, a `<noscript>` notice or static fallback says so.
@@ -242,3 +268,4 @@ Note: bfcache eligibility and the `no-store` ban are the most-missed 2026 items 
 - https://github.com/fsu-ml/fsu-ml.github.io/blob/HEAD/.claude/skills/website-audit/references/seo/L6-structured-data.md — rich-result support status as of July 2026
 - https://github.com/michealtestimony046-glitch/frontend-first-view/blob/HEAD/docs/seo-aeo-autonomous-research.md — Google's generative-AI search guidance (foundational SEO, no llms.txt, structured data not required)
 - http://dev.to/shreysaraswatweb/frontend-performance-in-2026-the-techniques-that-actually-move-the-needle-now-445j — speculation rules as MPA-only, Chromium-only caveats
+- Instagram community checklists (udayan.builds, yatesvids, okaashish, aj.on.ai, swiperightai), Oct 2026 — post-launch ops and launch-sweep items; treated as community hygiene checklists, not primary documentation. Rank promises ("rank #1 by Friday"), backlink-from-Forbes claims, and the blanket "AI content" ban were reframed or dropped — see the scope note under Post-launch operations.
