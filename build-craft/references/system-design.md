@@ -26,6 +26,13 @@ Production patterns for scalable, resilient distributed systems: partitioning, c
 - [ ] Payment/ledger/inventory use CP semantics — fail/queue on partition rather than serve stale balances; sessions/counters/feeds use AP with documented conflict resolution.
 - [ ] No two services share one database; cross-service reads go through APIs/events, not shared tables.
 
+## Cross-service workflows (sagas)
+
+- [ ] No distributed two-phase commit across services: 2PC couples every participant's availability to the coordinator and blocks participants when the coordinator fails — cross-service workflows use sagas instead.
+- [ ] Orchestrated sagas for auditable multi-step flows: a durable orchestrator (explicit state machine, outbox-backed) drives the step sequence, each step a local transaction plus an event; failures trigger compensating transactions in reverse order.
+- [ ] Every step has an idempotent forward action and a compensating action that is safe to run more than once — at-least-once delivery applies to compensations too; orchestration state is persisted so a crashed orchestrator resumes where it left off.
+- [ ] Choreography (event-only, no orchestrator) is reserved for simple flows where the implicit coupling is acceptable and documented; every saga has an end-to-end timeout plus a dead-letter/alert path for sagas stuck in compensation.
+
 ## Caching
 
 - [ ] Cache layers are named explicitly: CDN/edge, local in-process, distributed (Redis/Memcached); every entry has an explicit TTL or documented invalidation strategy.

@@ -37,6 +37,15 @@ How to run a design end-to-end: requirements, capacity math, component design (H
 - [ ] Cache strategy follows the read/write ratio; per-write-pattern mechanics (cache-aside, write-through, invalidation rules) are applied from `system-design.md`.
 - [ ] Consistency choice recorded per dataset with a staleness budget; the PACELC/quorum reasoning behind it lives in `system-design.md`.
 - [ ] Single points of failure identified and removed or mitigated (no single LB, no single DB without a replica).
+- [ ] Diagrams follow **C4** in **Mermaid** so they live in docs and diff like code: L1 Context (system + users/external systems), L2 Container (runnable units — API, workers, DB, cache, CDN; the HLD sketch stops here), L3 Component (modules inside one container, drawn only for the deep-dived component), L4 Code (classes/UML, LLD rounds only).
+- [ ] One diagram per level, each fitting on one whiteboard/frame; every arrow labeled with protocol and payload (`HTTPS/JSON`, `gRPC`, `events/Kafka`) — an unlabeled line is a defect.
+- [ ] Depth goes where the bottleneck is: L2 containers first from the request path, L3 for at most one or two hot components — never all four levels for everything.
+  ```mermaid
+  C4Container
+    Person(user, "User")
+    Container(api, "API", "Node", "REST")
+    Rel(user, api, "Uses", "HTTPS/JSON")
+  ```
 - [ ] Data model sketched: SQL vs NoSQL choice tied to access patterns (transactions/relationships → SQL; massive throughput/flexible schema → NoSQL), key tables/collections and relationships named.
 - [ ] One or two components deep-dived on demand (sharding scheme, cache strategy, a consensus decision) rather than going shallow everywhere.
 

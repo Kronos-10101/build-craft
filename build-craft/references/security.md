@@ -34,6 +34,7 @@ Concrete checks mapped to OWASP Top 10:2025 (final numbering — A01 Broken Acce
 - [ ] **Sessions**: cryptographically random ≥128-bit opaque IDs, never in URLs; cookies `Secure; HttpOnly; SameSite=Lax/Strict`; rotate session ID on login and privilege change; idle timeout ~15–30 min + absolute ~4–8 h; server-side invalidation on logout/password change/disablement.
 - [ ] **Brute-force defenses**: rate-limit logins per IP and per account (backoff/captcha after ~5 failures); identical generic responses and timing for valid/invalid accounts (no enumeration) on login/registration/reset.
 - [ ] **Reset tokens**: single-use, cryptographically random, ≤1–2 h expiry, bound to the account, invalidated on use; never logged.
+- [ ] **Constant-time comparisons**: webhook signatures, auth/reset tokens, and any secret comparison use `crypto.timingSafeEqual` (Node.js) / `hmac.compare_digest` (Python) — never `===`/`==` on secret material, which short-circuits on the first mismatch and leaks timing. Compare equal-length buffers only; length mismatches are rejected before comparison.
 
 ## LLM application security (OWASP LLM Top 10:2025)
 

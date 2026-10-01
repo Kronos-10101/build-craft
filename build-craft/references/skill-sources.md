@@ -2,6 +2,13 @@
 
 The agent uses these sources when it needs a capability this skill doesn't cover. Discover with `npx skills find <query>` first, then fall back to browsing the registries below. Every URL below was verified to resolve on 2026-09-30.
 
+## Index local skills before searching the internet
+
+- [ ] Before `npx skills find`, index the local skills directory before hitting the network: scan the skills directories in the per-agent table below, plus `~/.agents/skills` when it exists — a local skill that already covers the need beats a network install on speed, supply-chain risk, and reproducibility.
+- [ ] Build the index once per agent: record each `SKILL.md`'s `name`, `description`, and declared tools/scripts, search that index first for every capability request, and refresh it after every install or update.
+- [ ] Do not state a pre-installed local skill count as fact — count it before citing it. Verified 2026-10-01: `~/.agents/skills` does not exist on this machine; index what you can actually list.
+- [ ] Prefer an installed-and-vetted local skill over a fresh download; when no local skill fits, fall back to the registries below and vet per `references/skill-vetting.md`.
+
 ## Directories and CLIs
 
 | Source | URL | Notes |

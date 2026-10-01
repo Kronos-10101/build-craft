@@ -31,6 +31,7 @@ Concrete pass/fail rules for React 19.2 + Next.js 16.3 App Router apps. General 
 - [ ] Data is fetched on the server in Server Components — no `useEffect` fetch waterfalls on the client.
 - [ ] Independent async work is parallelized (`Promise.all` / parallel `await`s); dependent chains kept explicit and minimal.
 - [ ] Suspense boundaries are intentional: `loading.tsx` per route segment streams UI progressively instead of blocking the whole route.
+- [ ] Dynamic data waterfalls wrapped in `<Suspense fallback={<Skeleton />}>` — a slow query never blocks sibling content; skeleton geometry mirrors the final layout (loading-state standard in `design-polish.md`).
 - [ ] The caching model is declared, not inherited: either the legacy model (fetch uncached by default — caching opted in per call with `cache: 'force-cache'` / `revalidate` / `unstable_cache`) or Cache Components with `cacheComponents: true` in `next.config.ts` (opt-in, stable, the intended future default — checked 2026-09-30).
 - [ ] With Cache Components on: no request-time APIs (`cookies()`, `headers()`, `searchParams`) inside a `'use cache'` scope — values are read outside and passed in as arguments (args are part of the cache key); `'use cache: private'` used for per-user cached data; personalized output is never cached under shared arguments.
 - [ ] With Cache Components on: every `'use cache'` function sets a `cacheLife('…')` profile and a `cacheTag('…')`, and every dynamic read outside a cached scope sits under `<Suspense>` — otherwise the build errors; both facts verified in build output.
@@ -81,6 +82,7 @@ Concrete pass/fail rules for React 19.2 + Next.js 16.3 App Router apps. General 
 - [ ] `<Activity>` hides UI while preserving state and unmounting effects, instead of CSS-`hidden` mounts that keep everything alive (checked 2026-09-30).
 - [ ] The `use()` hook is used for promises/context in render where it simplifies code — same promise instance, not as a replacement for proper server data fetching.
 - [ ] No `useEffect` for data fetching, subscriptions that belong in event handlers, or syncing props to state — each has a non-effect idiom; effects synchronize with external systems only.
+- [ ] State architecture: values computable from other state are derived during render — no `useState` mirrors synced by effects; client state lives in Zustand with granular per-component selectors (subscribers re-render only on what they select) — Context providers reserved for genuinely app-wide values (locale, theme, session), never as a bulky global store.
 - [ ] Keys are stable and unique (`id`, never array index for reorderable lists); no key changes that remount and lose state.
 
 ## Observability
