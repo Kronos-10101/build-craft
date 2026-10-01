@@ -56,6 +56,15 @@ Scope: the flagship models, model classes, and selection rules as verified on 20
 - [ ] You confirm tokenizer and model-ID compatibility when migrating: pinned IDs die on schedules press releases never mention (Gemini 3 Pro Preview was shut down Mar 9, 2026, with the old ID silently aliased) — you pin IDs, watch deprecation pages, and test the alias (checked 2026-09-30)
 - [ ] You budget for agentic token multipliers: agent loops burn 5–50× the tokens of single-turn use, so token-efficient models (GPT-6.1 Sol, Gemini 3.8 Flash, DeepSeek V4-Flash) change agent economics more than per-token price alone — you measure tokens-per-task, not tokens-per-call (checked 2026-09-30)
 
+## Model routing strategy (added 2026-10-01)
+
+- [ ] You maintain an explicit routing table: Flash/Haiku-class models for high-volume, latency-sensitive work (classification, extraction, draft summarization); Pro/Opus-class reasoning tiers for architecture decisions, code review, and novel debugging — with tier examples drawn from the flagship entries above (e.g. Gemini 3.8 Flash for the fast tier; Opus 5.5 or GPT-6.1 Sol for the strong tier), and Haiku 5.5 re-evaluated for the fast tier once it ships.
+- [ ] You price the routing table on tokens-per-task measured on your own workload, not on headline per-token prices: the agentic 5–50× token multiplier above makes the fast tier the dominant cost lever for agent loops.
+- [ ] Fast-tier assignment requires clearing a documented accuracy bar on a 200–1000 row eval drawn from your own data; below the bar the task class is pinned to the strong tier — routing rules are never silent quality cuts.
+- [ ] Interactive traffic gets the fast tier with short timeouts; batch agent traffic gets higher reasoning-effort tiers on the strong tier — effort is set per task class, not per model.
+- [ ] A model or version change re-runs the routing table's evals: swapping a tier's model is a migration, shadow-tested before cutover (see llm-app-patterns.md).
+- [ ] You re-verify this table monthly alongside every dated claim in this file — the tier boundaries move with each release cycle.
+
 ## Where to track new releases (checked 2026-09-30)
 
 - [ ] You check LMArena (lmarena.ai) for blind human-preference Elo across 140+ models plus spinoff arenas (Agent, WebDev, Frontend Code) — verified it exists and is the standard preference leaderboard, with caveats above (checked 2026-09-30)

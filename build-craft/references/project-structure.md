@@ -25,8 +25,11 @@ Covers how a repository is organized and governed: folder layouts per ecosystem,
 ## Node / TypeScript layout
 
 - [ ] Importable code under `src/` (per package in a monorepo); tests colocated (`*.test.*` / `__tests__/`) or in top-level `tests/` — one convention per repo, enforced.
+- [ ] Colocation is strict, not optional: unit tests (`foo.test.ts`), styles (`foo.module.css`), stories, and mock fixtures sit next to the component they serve — never in a distant root `tests/` or `assets/` folder; top-level `tests/` is reserved for cross-cutting integration and E2E suites.
 - [ ] Build output (`dist/`, `build/`, `.next/`, `.turbo/`) is gitignored, never committed; the repo builds from `src/`.
 - [ ] Monorepo: root holds `pnpm-workspace.yaml` (or equivalent), `turbo.json` / `nx.json`, and the single root `README.md`; each `apps/*` and `packages/*` has its own `package.json` with an explicit `name`, `README.md`, and scripts.
+- [ ] Shared compiler/lint configs live in versioned internal packages (e.g. `packages/tsconfig-base`, `packages/eslint-config`) and are consumed by reference (`"extends": "@acme/tsconfig/base.json"`) — never copy-pasted and left to drift across packages.
+- [ ] Layer boundaries are linted, not hoped for: `eslint-plugin-boundaries` (JS/TS) or `import-linter` (Python) runs in CI and fails the build when an app imports another app's internals or a UI module reaches past its domain package.
 
 ## Go layout
 

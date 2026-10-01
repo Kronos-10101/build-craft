@@ -15,13 +15,15 @@ Covers style, typing, environments, packaging, errors, logging, testing, HTTP/as
 ## Typing
 
 - [ ] One authoritative checker gates CI: `mypy --strict` (keeps the plugin ecosystem: Django, SQLAlchemy, pydantic) or pyright strict — zero errors; every `type: ignore` carries a specific error code; `warn_unused_ignores = true`.
-- [ ] `ty` (Astral's Rust checker, 10–100× faster than mypy/pyright) piloted locally via `uvx ty check`; not the merge gate until it reaches 1.0 (still 0.0.x beta, checked 2026-09-30).
+- [ ] `ty` (Astral's Rust checker) piloted locally via `uvx ty check` — its 10–100×-faster-than-mypy/pyright claim is Astral's published benchmark, not an independently verified fact; not the merge gate until it reaches 1.0 (still 0.0.x beta, checked 2026-09-30).
 - [ ] Checker version pinned; CI runs the same version developers run locally.
 - [ ] All signatures fully annotated (params + returns); modern syntax `list[str]`, `X | None`; PEP 695 `type Alias = ...` / `def f[T](...)` on 3.12+ floors (grammar — cannot be backported).
 - [ ] On 3.14+: deferred annotation evaluation is the language default — `from __future__ import annotations` no longer needed; libraries read annotations via `annotationlib`, never `__annotations__` directly.
 - [ ] `typing_extensions` declared as a runtime dependency when supporting <3.12 (`Self`, `override`, `ReadOnly`); imported unconditionally, not version-gated.
 - [ ] No `Any` leaking from untyped third-party deps without a documented reason.
 - [ ] Data modeling: pydantic v2 at the trust boundary (HTTP bodies, env vars, files, LLM output — runtime validation + coercion); `@dataclass(frozen=True, slots=True)` for internal value objects; `TypedDict` for dict shapes you don't construct.
+- [ ] Strict pydantic v2 multi-model pattern at every write endpoint: separate `XRequest` (what the client may submit), `XResponse` (what the API returns), and `XDB` (the full ORM/persistence row) models — never bind or persist the request model directly, or a client-supplied `role`/`is_admin` field becomes an over-posting vulnerability (checked 2026-10-01).
+- [ ] `XRequest` declares only writable fields with `model_config = ConfigDict(extra="forbid")`; `XResponse` built explicitly from the DB row (never `XResponse.model_validate(row)` with a permissive model), so new sensitive columns don't leak by default.
 
 ## Environments & dependencies (uv)
 

@@ -24,6 +24,8 @@ How CPython actually executes code — eval loop, specialization, the GIL, free 
 - [ ] Escape hatches exist: `-X gil` / `PYTHON_GIL=0` re-enable the GIL inside a free-threaded build.
 - [ ] The JIT does NOT work on free-threaded builds (true in 3.14; JIT+free-threading is a 3.16/3.17 roadmap goal per PEP 836).
 - [ ] Production posture: test your suite on the `3.14t` build now, but don't deploy free-threaded to production yet and don't restructure assuming the GIL is gone — code that was "accidentally thread-safe" under the GIL now races; every shared-mutable structure gets real locks.
+- [ ] Building for free-threaded: C extensions compile against the `t` ABI and declare GIL-independence (the `Py_mod_gil` slot or `PyUnstable_Module_SetGIL` above); build the extension's test matrix against both `python3.14` and `python3.14t`, and run the threaded stress tests under ThreadSanitizer where a TSan-instrumented interpreter is available (checked 2026-10-01).
+- [ ] Profiling free-threaded CPU code: use thread-aware samplers (py-spy thread mode, `perf`, or Tachyon's gil mode in 3.15) — never cProfile, whose per-thread overhead misleads; measure scaling against the GIL-build baseline and profile per-thread hotspots, not just process totals.
 
 ## The JIT (PEP 744, copy-and-patch)
 
@@ -85,6 +87,7 @@ How CPython actually executes code — eval loop, specialization, the GIL, free 
 
 - [ ] `memoryview`/`bytes`/`bytearray` for binary parsing — no `bytes(x)` copies in the hot path.
 - [ ] Pickle protocol 5 (PEP 574) out-of-band data: `PickleBuffer` + `buffer_callback`/`buffers` let NumPy arrays serialize with zero copies (default in-band use still copies).
+- [ ] High-throughput socket I/O: pre-allocate one `bytearray` and `sock.recv_into(buf)` (or a `memoryview` slice over it) per read; parse frames with `memoryview` slices and `struct.unpack_from` — never `bytes()` per packet or per-frame slicing in the hot loop, or buffer copies dominate CPU.
 
 ## Micro-optimizations (only after profiling)
 

@@ -22,7 +22,19 @@ Write the plan in this shape before any code:
 - [ ] **File-by-file changes** — every file created/modified/deleted and what changes inside it.
 - [ ] **Test plan** — what you will test, at which layer (see `references/testing.md`), and what "passing" means.
 - [ ] **Risks** — what could go wrong, likelihood, and the mitigation or contingency for each.
+- [ ] **Blast radius** — name every existing endpoint, DB table or migration target, background job, and UI component the change touches or could regress; for each, who is hurt if it breaks and how you detect it within one deploy cycle.
 - [ ] **Rollback** — how to undo this if it fails in production (revert commit, migration down, feature flag).
+
+## Persistent state planning — survive context compaction and session restarts
+
+- [ ] The plan of record lives in `task.md` (goal, decisions, task list with owners and done-conditions) and an append-only `progress.md` (what was done, what was learned, what is next); both are committed or kept in the shared working dir — never only in chat.
+- [ ] After every task completes or every ~30 minutes of wall-clock work, you append to `progress.md`; a session restart costs at most one task, never the whole plan.
+- [ ] The resume routine reads `task.md` + `progress.md` and continues from the first incomplete task — no re-planning from scratch on restart.
+
+## Atomic acceptance criteria
+
+- [ ] Every task's done-condition is binary and checkable by a tool, not a human judgment: `curl -f http://localhost:8000/health` returns 200; `pytest --cov-fail-under=85` passes; the Playwright scenario goes green; the PR has ≥1 approval with all required checks passing.
+- [ ] No done-condition says "works", "looks right", or "is done" — each one names the exact command, endpoint, or gate that decides it.
 
 ## Pre-mortem: assume the plan already failed
 

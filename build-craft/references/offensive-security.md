@@ -41,7 +41,7 @@ Scope: how each attack class works from the attacker's point of view and the con
 ## Insecure direct object references (IDOR / BOLA)
 
 - [ ] You can explain the mechanism: the attacker swaps an object identifier in the URL or body (or targets nested, batch, or GraphQL resources) to reach someone else's data — authentication proves who you are, never what you own; this is API1:2023, the top API risk.
-- [ ] Prevention you can defend: server-side ownership and tenant checks on every object on every method, deny by default, and treat unguessable IDs (UUIDs) as defense-in-depth only — never as the access control.
+- [ ] Prevention you can defend: server-side ownership and tenant checks on every object on every method, deny by default, and treat unguessable IDs (UUIDs) as defense-in-depth only — never as the access control. Push the tenancy check into the database query itself — `SELECT * FROM docs WHERE id = ? AND tenant_id = ?` — rather than fetching the row and checking in memory, so a forgotten in-memory check fails closed instead of leaking; DB row-level security (RLS) policies are the strongest version of this.
 
 ## API-specific attacks: BOPLA, BFLA, business-flow abuse
 
