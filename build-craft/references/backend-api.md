@@ -63,6 +63,7 @@ Covers REST/HTTP semantics, versioning and compatibility, input validation, auth
 
 - [ ] Every list endpoint paginated: server-enforced default (20–50) and hard max (100); no unbounded result sets; total counts returned only when cheap or cached separately, never via full-scan `COUNT(*)` per request.
 - [ ] Cursor/keyset pagination by default at scale: opaque cursors, deterministic `ORDER BY` with a unique tiebreaker so pages stay stable under concurrent writes; offset allowed only for small frozen admin lists.
+- [ ] OFFSET is banned outright for tables over ~10k rows — deep OFFSET scans and re-reads row-by-row: keyset pagination with a unique tiebreaker column (e.g. `WHERE (created_at, id) < (?, ?)`) is the only allowed pattern there.
 - [ ] Navigation exposed via RFC 8288 `Link` headers (`rel="next"`, `rel="prev"`); cursors never leak internal row IDs or implementation details.
 - [ ] Filterable/sortable fields from an explicit allowlist, all backed by indexes (verified with `EXPLAIN`); unknown filter/sort params rejected with `400`; empty collection returns `200` with `[]`, never `404`.
 - [ ] Filter operators bounded (no arbitrary expression languages on the wire); date ranges and text search get dedicated, indexed parameters.

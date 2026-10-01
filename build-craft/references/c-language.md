@@ -24,9 +24,19 @@ Covers the C23 standard, compiler warnings, sanitizers, static analysis, CERT C 
 
 - [ ] CI builds and runs tests with ASan + UBSan: `-fsanitize=address,undefined -fno-sanitize-recover=all -g -O1 -fno-omit-frame-pointer`; zero reports.
 - [ ] Multithreaded code additionally runs under TSan (`-fsanitize=thread`) in a **separate** build — never combined with ASan; MSan where a fully-instrumented build is feasible.
+- [ ] `-fsanitize=bounds` is mandatory in CI alongside ASan+UBSan (catches sub-object bounds violations the allocators miss); `-fstack-protector-strong` is enabled in CI test builds as well as release builds, never compiled out for "speed".
 - [ ] LeakSanitizer (on by default under ASan): test suite exits with zero leaks.
 - [ ] Production services: GWP-ASan (sampling-based heap checker — negligible CPU, no false positives) for heap use-after-free and overflows in live traffic.
 - [ ] `_FORTIFY_SOURCE` disabled under ASan (causes false positives/negatives).
+
+## Auto-vectorization (SIMD)
+
+Compilers vectorize simple loops for free — but only when the loop is provably safe to vectorize. Hand-writing intrinsics before satisfying these is premature.
+
+- [ ] Vectorizable-loop shape: countable trip count, no early `break`/`return`/data-dependent exit, no function calls or I/O in the body, stride-1 contiguous access.
+- [ ] No aliasing across the arrays (`restrict`-qualified pointers or compiler-provable non-overlap); data aligned to the vector width (`aligned_alloc` / `__builtin_assume_aligned`) — misaligned or possibly-aliased loops silently scalarize.
+- [ ] Explicit intent: `#pragma omp simd` on the hot loop when the compiler hesitates; loop-unrolling guarded by `#pragma GCC unroll N` (or `clang loop unroll`) only after measuring — blind unrolling can trash the I-cache.
+- [ ] Verify, don't assume: compile with `-fopt-info-vec-missed` and confirm the loop vectorized; confirm with a benchmark that SIMD actually beat the scalar loop on the target CPU (checked 2026-10-01).
 
 ## Static analysis
 
@@ -38,8 +48,9 @@ Covers the C23 standard, compiler warnings, sanitizers, static analysis, CERT C 
 ## CERT C / MISRA / memory safety
 
 - [ ] CERT C rules now cite ISO/IEC 9899:2024; MISRA C 2025 (March 2025) is the current edition covering C90–C18 — know which standard your industry actually requires.
-- [ ] No `gets()` — `fgets()` instead; no `strcpy`/`strcat`/`sprintf` — bounded variants only (`snprintf` with truncation check, `strncpy` with explicit `'\0'`, `strncat`).
-- [ ] Prefer `strlcpy`/`strlcat` (glibc ≥2.38) and always check the return value for truncation.
+- [ ] No `gets()` — `fgets()` instead; no `strcpy`/`strcat`/`sprintf`/`strncpy` — `strncpy` is banned outright (no NUL guarantee on truncation, wasteful zero-padding); bounded variants only.
+- [ ] Bounded strings: `strlcpy`/`strlcat` (glibc ≥2.38) or `snprintf`, and the return value is always checked for truncation — a bounded copy whose truncation went unverified fails review.
+- [ ] No `strncat` without proving the destination was NUL-terminated first; `strdup`/`strndup` (C23) for copies where the source is trusted-length.
 - [ ] Prefer `reallocarray(nmemb, size)` / `calloc` over `malloc(nmemb * size)` — overflow-safe sizing; `ckd_add`/`ckd_sub`/`ckd_mul` for arithmetic feeding allocation/copy sizes; never rely on signed-integer overflow.
 - [ ] `realloc(p, 0)` is undefined behavior in C23 — never rely on free-on-zero-realloc.
 - [ ] Wipe secrets with `memset_explicit` (immune to dead-store elimination), not `memset` or `explicit_bzero`.

@@ -37,6 +37,13 @@ Named reasoning patterns, multi-agent topologies, 2026 dynamic workflow patterns
 - [ ] Inter-agent communication is structured (schemas, not free text) so handoffs are parseable, testable, and debuggable.
 - [ ] The topology is versioned with the agent: changing worker count, routing rules, or supervisor prompts is a config change that goes through evals, not a silent tweak.
 
+## Agent memory architecture (added 2026-10-01)
+
+- [ ] The three memory layers are physically separated: **Episodic** (the conversation/trajectory log — what happened, append-only), **Semantic** (vector RAG over durable facts — user preferences, project conventions, retrieved by relevance), **Procedural** (SKILL.md files, tool definitions, playbooks — versioned how-to knowledge).
+- [ ] Writes go to exactly one layer: a runbook update is a procedural change (reviewed, versioned); a user preference is a semantic fact (attributed, TTL'd); a debugging trace is an episodic record (append-only) — nothing is silently stored in two places.
+- [ ] Retrieval is layer-aware: the agent pulls procedural knowledge for *how* to act, semantic facts for *what is true*, episodic traces for *what was tried* — a single undifferentiated "memory" query is a smell.
+- [ ] Cross-layer confusion is tested: the eval set includes cases asserting the model distinguishes a retrieved fact (may be stale — check TTL) from a procedure (follow it) from a past trajectory (do not repeat it blindly).
+
 ## Dynamic workflow patterns (Anthropic, Claude Code, June 2026)
 
 - [ ] These six composable patterns cover dynamic multi-agent orchestration where the model writes the harness: **classify-and-act** (classifier routes to different agents/models), **fan-out-and-synthesize** (split, run one agent per item, barrier-merge), **adversarial verification** (a separate verifier per spawned agent checks output against a rubric), **generate-and-filter** (generate N ideas, filter/dedupe by rubric), **tournament** (N agents compete on the same task, pairwise judging picks the winner), **loop-until-done** (keep spawning until the stop condition — no new findings, zero errors — instead of a fixed pass count).
@@ -88,6 +95,8 @@ Named reasoning patterns, multi-agent topologies, 2026 dynamic workflow patterns
 - [ ] Evals gate changes: PR gate on a versioned golden set (fail on >5% success-rate drop or any safety violation); every production failure becomes a new eval case; evals are re-run on every change (eval-driven development).
 - [ ] Eval runs are reproducible: pinned judge version, temperature, dataset version, and seeds are recorded with every result — an eval you cannot rerun is an anecdote.
 - [ ] Judge calibration tracked over time: judge–human agreement re-measured whenever the judge model changes; drift invalidates historical comparisons.
+- [ ] For agents with retrieval, RAGAS-style metrics gate deployment alongside task success: **Faithfulness** (claims supported by the retrieved context), **Answer Relevance** (the answer addresses the asked question), **Context Precision** (retrieved chunks are actually relevant) — measured on the held-out set with a pinned judge (added 2026-10-01).
+- [ ] Thresholds are set per metric and documented; a change that regresses any one of the three fails the gate even if headline task success is flat — success rate alone does not catch groundedness regressions.
 
 ## Sources
 

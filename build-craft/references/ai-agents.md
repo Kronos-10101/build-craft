@@ -56,6 +56,17 @@ Pass/fail rules for constructing tool-using agents: the loop, tools, error handl
 - [ ] Retrieved memory is attributable (the agent can say which memory influenced a decision); stale memories carry TTLs or invalidation rules.
 - [ ] The context-hygiene policy is written down: which old observations get compacted or dropped first (superseded search results before tool schemas before the goal itself).
 - [ ] Tool results stay terse: the agent extracts the fields it needs and never re-reads megabytes of raw tool output to find one field.
+- [ ] Procedural memory is separated from episodic and semantic: durable how-to knowledge (SKILL.md files, tool definitions, playbooks, runbooks) is versioned and loaded per agent like code, not smeared across prompts — the agent knows *how* from procedure, *what happened* from episodic memory, and *what is true* from semantic memory.
+- [ ] The three layers carry distinct write policies: procedural changes go through review and versioning; semantic facts carry TTLs and attribution; episodic trajectories are append-only logs for debugging and self-improvement — one store pretending to be all three is a defect.
+
+## Delegating to subagents — single-task contracts (added 2026-10-01)
+
+- [ ] Every delegation carries an explicit contract: typed inputs (schema), expected outputs (schema), a single named task, and a machine-checkable definition of done — no open-ended "look into this".
+- [ ] One subagent, one task: a subagent never inherits the parent's full goal; if the work splits, the parent splits the contract, not the agent's judgment.
+- [ ] Subagent outputs pass an automated review gate before acceptance: schema validation at the barrier plus a verifier (model or deterministic check) scoring the output against a rubric — a malformed or rubric-failing result is rejected and re-spawned, never silently absorbed.
+- [ ] The parent treats the subagent as untrusted: its outputs are validated data, never new instructions; credentials and system rules are not forwarded unless the contract explicitly requires them.
+- [ ] Failed delegations are bounded: N re-spawns max, then escalate to a human or fail the parent task — no infinite subagent loops.
+- [ ] Every delegation is logged with its contract, inputs, outputs, and gate verdicts, so a bad subagent result traces to the exact contract that produced it.
 
 ## Planning vs reacting
 

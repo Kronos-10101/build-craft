@@ -53,6 +53,26 @@ For diff-based reviews, check in this priority order — design first, style las
 - [ ] **Naming / comments / docs** — names clear without opening the implementation; comments explain why, not what.
 - [ ] **Style / consistency** — matches the codebase's conventions; personal taste is `Nit:` only, never blocking; pre-existing debt gets a separate ticket, never blocks this change.
 
+## Structural audit dimensions (AI-generated code)
+
+For AI-assisted codebases, run a structural pass across these seven dimensions — each names where it is audited above, so no dimension is assumed covered just because it was generated alongside the others:
+
+- [ ] **Architectural Coherence** — the design passes as one system: module boundaries match the data flow, no divergent implementations of the same concern, no circular dependencies or god modules (audited in Order step 5, Maintainability, and the Design-first diff review).
+- [ ] **Error Handling** — every fallible path has an owner: errors propagated rather than swallowed, user-facing messages leak no internals, failure modes documented (audited in What-to-check-first error gaps and the Correctness partial-failure pre-mortem).
+- [ ] **State Integrity** — state machines are total: every transition validated, idempotent retries leave the system coherent, concurrent writers cannot corrupt shared state (audited in Correctness: state-machine holes, out-of-order/duplicate events, races).
+- [ ] **Scaling Limits** — the system names its ceiling: unbounded growth points (queues, queries, caches) quantified, hot paths load-tested to the stated limit (audited in Correctness resource exhaustion and Order step 4, Performance).
+- [ ] **Security** — the full Security deep pass (Order step 2); for AI-generated auth/authz code, re-verify against STRIDE rather than trusting the structure.
+- [ ] **Anti-Slop** — no AI median tells: no dead config, no speculative abstraction layers, no generic wrapper forests, no commented-out scaffolding left as residue — verified against the codebase's own conventions and `references/design-distinct.md`.
+- [ ] **Accessibility** — user-facing changes verified against the gates in the next section; "works" includes "works with assistive tech."
+
+## Product-quality verification gates: accessibility & Core Web Vitals
+
+Audit gates for user-facing surfaces (added 2026-10-01; the mechanics live in `references/web-frontend.md` — this section is the gate, not a second copy):
+
+- [ ] Accessibility gate: WCAG 2.2 AA — automated scan (axe-core / Lighthouse) returns zero critical violations; the keyboard-only path and screen-reader landmarks are verified by hand on the changed flows; a contrast failure is a finding, not a nit.
+- [ ] Core Web Vitals gate: field data at the 75th percentile meets LCP ≤2.5s, INP ≤200ms, CLS ≤0.1 (mobile and desktop assessed separately); Lighthouse lab runs gate CI but never substitute for field data.
+- [ ] Both gates run on every user-facing diff; a regression against either is blocked exactly like a security regression — advisory only after proving stable.
+
 ## What to check first (cheap, high-yield)
 
 - [ ] Threat surface inventory mapped and written down.
