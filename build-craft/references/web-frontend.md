@@ -52,6 +52,7 @@ Pass/fail checks for semantic HTML, WCAG 2.2 AA accessibility, mobile ergonomics
 - [ ] Tables on mobile scroll inside a labeled region (`role="region"` + `aria-label` + `tabindex="0"`), never by forcing page-level horizontal overflow.
 - [ ] Fluid foundation: relative units (`%`, `rem`, `fr`, `clamp()`); media queries adapt features rather than amputating them; readable and operable at 200% browser zoom (1.4.4).
 - [ ] Component-level responsiveness via CSS container queries (`@container`); no per-breakpoint JS layout code where CSS suffices.
+- [ ] CSS-first layout and state: native CSS nesting, `:has()` parent selectors, `@container` container queries, and `color-mix()` for derived color variants (all Baseline widely available, checked 2026-10-01) — JS layout listeners (resize handlers computing breakpoints, JS-driven theme switches) are a last resort, never the default.
 - [ ] CSS anchor positioning (`position-anchor`, `anchor()`, `position-try-fallbacks` — Baseline 2026, checked 2026-09-30) tethers tooltips, menus, and popovers instead of Floating UI/Popper.js; pure progressive enhancement where unsupported.
 
 ## Core Web Vitals & performance
