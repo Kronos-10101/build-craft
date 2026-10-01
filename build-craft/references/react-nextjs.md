@@ -85,6 +85,18 @@ Concrete pass/fail rules for React 19.2 + Next.js 16.3 App Router apps. General 
 - [ ] State architecture: values computable from other state are derived during render — no `useState` mirrors synced by effects; client state lives in Zustand with granular per-component selectors (subscribers re-render only on what they select) — Context providers reserved for genuinely app-wide values (locale, theme, session), never as a bulky global store.
 - [ ] Keys are stable and unique (`id`, never array index for reorderable lists); no key changes that remount and lose state.
 
+## GSAP animations
+
+Official GreenSock AI skills: `greensock/gsap-skills` — the README states "Official AI skills for GSAP" (8 skills, checked 2026-10-02).
+
+- [ ] Animations use `useGSAP()` from `@gsap/react` with a scope argument, or `gsap.context()` with `ctx.revert()` cleanup inside `useEffect` — never bare tweens left leaking on unmount.
+- [ ] Animations triggered from event handlers go through `contextSafe`, not recreated contexts per click.
+- [ ] No GSAP during SSR: animation setup runs only after mount (client-only code path or `useGSAP`), never during server render.
+- [ ] ScrollTrigger: pin/scrub declared with explicit `toggleActions` (e.g. `"play reverse play reverse"`); scrubbed tweens use `ease: "none"`.
+- [ ] `markers: true` is dev-only — stripped from production builds.
+- [ ] `ScrollTrigger.refresh()` runs after any layout change (fonts loaded, content injected, resize) so trigger positions stay correct.
+- [ ] GSAP performance rules: `gsap.quickTo()` for high-frequency updates (drag/scrub handlers); stagger instead of many independent tweens; off-screen animations killed, not left running; `will-change` only on currently animating elements (transform/opacity-only animation is enforced in design-polish.md).
+
 ## Observability
 
 - [ ] `instrumentation.ts` `register()` is used for server-startup hooks only (DB warm-up, OpenTelemetry registration) — it runs once per runtime, never for request-time logic.
@@ -113,3 +125,4 @@ Concrete pass/fail rules for React 19.2 + Next.js 16.3 App Router apps. General 
 - https://dev.to/jtorchia/nextjs-v1636-vs-v15526-whats-in-each-branch-according-to-the-changelog-578n
 - https://oday-bakkour.com/blog/next-js-rce-dev-stack-release-audit-2026-09-24
 - https://github.com/aayushmaan-54/blog/blob/HEAD/src/content/writing/blogs/nextjs-server-actions-explained.mdx
+- https://github.com/greensock/gsap-skills — GreenSock's official AI skills (README: "Official AI skills for GSAP"); the react, scrolltrigger, and performance skills were read for the GSAP section above (checked 2026-10-02)

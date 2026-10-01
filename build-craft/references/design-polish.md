@@ -87,6 +87,8 @@ Scope: the verifiable craft system behind refined interfaces — typography, spa
 - [ ] External margin ≥ internal padding; edges and baselines align across columns; CSS Grid/Flexbox/subgrid only (no absolute-position layout).
 - [ ] Components adapt via container queries (`@container`), media queries reserved for page-level concerns; touch targets ≥44×44px with 8–16px spacing between interactive elements.
 - [ ] Layout CSS ordered via cascade layers (`@layer reset, base, components, utilities`); component proximity scoping uses `@scope` (Baseline Jan 2026) instead of specificity hacks.
+- [ ] Concentric radii: outer radius = inner radius + padding — nested rounded corners compound instead of matching; one consistent inner radius per surface (better-ui, jakubkrehel/skills, MIT, checked 2026-10-02).
+- [ ] Optical over geometric alignment: icons next to text, centered dots, and baselines aligned by eye (optical center) — pixel-exact math that looks off-center fails.
 
 ## Color system (OKLCH-first)
 
@@ -102,6 +104,7 @@ Scope: the verifiable craft system behind refined interfaces — typography, spa
 - [ ] Neutrals tinted toward the brand hue (tiny chroma, e.g. `oklch(18% 0.015 255)`), never pure gray; body text off-white, never pure white.
 - [ ] Contrast re-verified in both modes, including skeleton and error surfaces; `theme-color` meta per mode.
 - [ ] No wrong-theme flash: theme applied before first paint (early inline script or `color-scheme` hint); persisted preference beats OS default.
+- [ ] Theme-switch transition suppression: on light/dark toggle, inject `transition: none !important`, force a reflow, restore on the next frame — no color-transition flicker across every element (better-ui technique, checked 2026-10-02).
 - [ ] Visible `:focus-visible` on every interactive element (≥2px outline, high-contrast against the current theme, offset ≥2px); skip-to-content link first in the DOM.
 
 ## Micro-interactions & motion (2026)
@@ -114,6 +117,12 @@ Scope: the verifiable craft system behind refined interfaces — typography, spa
 - [ ] View Transitions API used for state/route changes — same-document is Baseline since Firefox 144 (Oct 2025); cross-document (`@view-transition { navigation: auto }` on both documents) is progressive enhancement only (no Firefox as of mid-2026).
 - [ ] Scroll-driven animations (`animation-timeline: scroll()/view()`) gated behind `@supports` and `prefers-reduced-motion` — progressive enhancement only (Firefox behind a flag as of mid-2026); content never gated on them.
 - [ ] Scroll containers use `scrollbar-gutter: stable` to prevent layout shift when scrollbars appear; `scroll-padding` keeps anchored content clear of sticky headers.
+- [ ] Named motion tokens (transitions.dev practice, checked 2026-10-02): durations, easings, distances, and blur as CSS custom properties; ad-hoc values tokenized in a refine pass — no raw `200ms` scattered in components. (The repo's "43+" tagline is its marketing claim; the shipped skill carries 32 transitions.)
+- [ ] Easing vocabulary with exact curves: default `--ease-smooth-out: cubic-bezier(0.22, 1, 0.36, 1)`; bounce curves (`cubic-bezier(0.34, 1.36, 0.64, 1)`) reserved for playful non-functional moments — never on functional motion.
+- [ ] Interruptible by default: interactive state changes use CSS transitions (always interruptible); one-shot sequences use keyframes; never non-interruptible JS-driven animations on hover/active/press states.
+- [ ] Press feedback: `scale(0.96)` on press, never below `0.95`; paired with the 100–160ms press token.
+- [ ] Exits softer than enters: small fixed translateY (~4–8px), ease-out both directions; ~100ms stagger only for infrequent staged entrances (page-load lists), never on every interaction.
+- [ ] Motion reviewed at 10% speed before shipping — slow playback exposes jank and asymmetry invisible at full speed.
 
 ## Loading states
 
@@ -179,3 +188,6 @@ Pull from these vetted, high-taste sources instead of generic AI templates. When
 - https://github.com/semikolon/spela/blob/HEAD/docs/ux_principles_media_remote_2026_07_04.md — loading duration/pattern mapping (NN/g)
 - https://github.com/narenkatakam/ux-audit/blob/HEAD/skills/ux-audit/references/ui-states.md — skeleton vs spinner decision tree, empty/error patterns
 - https://github.com/rbaumier/skills/blob/HEAD/ui-ux/SKILL.md — view-state completeness, skeleton implementation
+- https://github.com/Jakubantalik/transitions.dev — motion-token vocabulary (`skills/transitions-dev/_root.css`: durations, easings, distances) and the tokenize-ad-hoc-motion ("refine") practice (checked 2026-10-02)
+- https://github.com/jakubkrehel/skills — `better-ui` skill (MIT): concentric radius, optical alignment, interruptible animations, stagger/exit discipline, theme-switch transition suppression, 10%-speed review (checked 2026-10-02)
+- https://github.com/pbakaus/impeccable — the repo's own claimed spec is "1 skill, 24 commands, 61 deterministic detector rules" (Paul Bakaus, Apache 2.0, ~73.5k stars, checked 2026-10-02)

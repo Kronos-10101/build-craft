@@ -108,6 +108,11 @@ An LLM outputs the statistical median of its training data: Tailwind docs exampl
 - [ ] **Semantic color naming**: name colors for what they do, not what they look like (`--color-action-primary`, not `--color-gradient-start`) — decorative color carries no meaning.
 - [ ] **Treat slop as a gravitational pull, not a one-time bug**: every new AI-generated page is a fresh chance for defaults to creep back — audit against the tells above on each pass.
 - [ ] **The 3-color constraint**: 2–3 brand colors + neutral grays max; neutrals consistently warm *or* cool (never sterile pure `#FFFFFF` nor pitch `#000`); one distinctive accent used as pinpricks (<10% viewport) for CTAs, active states, key data — color means something or stays home. (Token architecture in design-polish.md.)
+- [ ] **No nested cards**: one surface per thought — cards inside cards are div soup; flatten to a single surface with dividers or spacing (Impeccable anti-pattern, checked 2026-10-02).
+- [ ] **No gray text on colored backgrounds**: mid-gray on a colored surface fails contrast and reads washed-out — colored surfaces get tinted white or dark ink, never gray (Impeccable anti-pattern, checked 2026-10-02).
+- [ ] **Icon discipline**: one stroke weight per icon set (1.5px at regular, 2px at semibold), `currentColor` theming, one icon library per surface — mixed weights and libraries are a tell.
+- [ ] **Choose the mode by surface, not product** (Impeccable, checked 2026-10-02): a settings screen is Operate, a marketing page is Persuade, docs are Read, a demo is Experience — each mode gets its own density, motion, and copy register.
+- [ ] **PRODUCT.md separate from DESIGN.md**: durable product truth (what it is, who it's for, tone, never-do list) lives apart from the visual system — reviewers check against product truth, not taste drift (Impeccable practice, checked 2026-10-02).
 
 ## What the distinctive ones actually do — steal the principles, not the pixels
 
@@ -274,3 +279,4 @@ Community checklists from Instagram reels (Oct 2026) contributed the pastel-card
 - https://bklit.com/ — polished responsive chart templates
 - https://coolors.co/ — palette generator with WCAG contrast checker
 - https://fontjoy.com/ — font pairing tool
+- https://github.com/pbakaus/impeccable (Paul Bakaus, Apache 2.0, ~73.5k stars, checked 2026-10-02) — the repo's own claimed spec is "1 skill, 24 commands, 61 deterministic detector rules"; the four modes (Persuade/Operate/Read/Experience), the PRODUCT.md-vs-DESIGN.md split, and the anti-pattern set (no nested cards, no gray text on colored backgrounds, no pure black/gray — always tint, no bounce/elastic easing)
