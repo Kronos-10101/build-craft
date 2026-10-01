@@ -1,6 +1,6 @@
 # Planning and Grill Me — plan the work, then interrogate the plan until it survives
 
-Scope: how to break a task down, allocate it, write an implementation plan, and then grill that plan with hostile questions until every hole is closed. Read this file during P-1 and P-2 of the SKILL.md workflow. Checked 2026-09-30.
+Scope: how to break a task down, allocate it, write an implementation plan, run a pre-mortem on it, and then grill it with hostile questions until every hole is closed. Read this file during P-1 and P-2 of the SKILL.md workflow. Checked 2026-09-30.
 
 ## Task planning and allocation
 
@@ -10,6 +10,7 @@ Scope: how to break a task down, allocate it, write an implementation plan, and 
 - [ ] You marked what can run in parallel (independent tasks, parallel research) vs what must be sequential; parallel work has no shared mutable state between streams.
 - [ ] If delegating to subagents, each one got exactly one task with its own done-condition and all the context it needs — never "help with the project".
 - [ ] You identified the single riskiest assumption and have a plan to validate it first, not last.
+- [ ] You classified each decision as a one-way door (hard/costly to reverse — needs the full grill) or a two-way door (cheaply reversible — decide fast, adjust later); one-way doors get disproportionate scrutiny.
 
 ## The implementation plan template
 
@@ -17,11 +18,26 @@ Write the plan in this shape before any code:
 
 - [ ] **Goal** — one sentence: what will exist when this is done.
 - [ ] **Non-goals** — what you are explicitly not doing (prevents scope creep mid-build).
-- [ ] **Design decisions** — each decision with the alternatives considered and why this one won (one line each).
+- [ ] **Design decisions** — each decision with the alternatives considered and why this one won (one line each); mark one-way vs two-way doors.
 - [ ] **File-by-file changes** — every file created/modified/deleted and what changes inside it.
 - [ ] **Test plan** — what you will test, at which layer (see `references/testing.md`), and what "passing" means.
 - [ ] **Risks** — what could go wrong, likelihood, and the mitigation or contingency for each.
 - [ ] **Rollback** — how to undo this if it fails in production (revert commit, migration down, feature flag).
+
+## Pre-mortem: assume the plan already failed
+
+Gary Klein's pre-mortem (HBR, 2007): prospective hindsight — imagining the failure has already happened — surfaces ~30% more real failure causes than asking "what could go wrong," because it gives dissent permission. Run it right after the plan feels settled, before commitment:
+
+- [ ] You stated the failure as a foregone fact, past tense: "It is six months from now. This plan failed spectacularly. Here is the history of how."
+- [ ] You wrote failure causes independently and silently first (no anchoring on the first confident voice), then harvested them all before debating any.
+- [ ] You rotated through the five lenses so the exercise doesn't re-surface the one failure mode everyone already named:
+  - **Adversary** — how would someone actively trying to defeat this exploit it?
+  - **Resource failure** — what if time, budget, people, or a key dependency simply didn't show up?
+  - **Silent failure** — what fails quietly, undetected until it's too late to fix cheaply?
+  - **External shock** — what outside event (market, regulatory, personnel, provider outage) breaks an assumption baked into the plan?
+  - **Internal blind spot** — what does everyone already half-suspect but hasn't said aloud?
+- [ ] You ranked causes by likelihood × impact and wrote mitigations for the top three directly into the plan — not into a separate risk register nobody reads.
+- [ ] You checked the bus factor: which single person, credential, or undocumented system does the plan silently depend on, and what happens when it's gone?
 
 ## Grill me: the question bank
 
@@ -39,6 +55,7 @@ Attack the plan with questions derived from the plan itself. Run at most 5 per r
 - [ ] List every assumption the plan makes. For each: what breaks if it is wrong, and how would you detect that?
 - [ ] What are you assuming about the input data (shape, size, encoding, trustworthiness)? What happens on the first malformed input?
 - [ ] What are you assuming about the environment (OS, versions, network, credentials)? What happens when an assumption fails at 2 AM?
+- [ ] What are you assuming about time and people — who does what, by when, and what slips first when the estimate is wrong?
 
 ### Design and interfaces
 
@@ -46,12 +63,14 @@ Attack the plan with questions derived from the plan itself. Run at most 5 per r
 - [ ] Where are the module boundaries, and what crosses them? Could a boundary move and simplify everything?
 - [ ] What does the public interface (API, CLI, file format) look like, and what happens when a caller misuses it?
 - [ ] What state exists, where does it live, and what happens when two writers race?
+- [ ] Is this a one-way door wearing a two-way door's clothes — what is actually irreversible once you start?
 
 ### Edge cases and failure modes
 
 - [ ] What is the empty case, the one-item case, the maximum case, and the hostile case?
 - [ ] What happens when each dependency fails (network, database, disk full, third-party API down)? Walk the failure, don't hand-wave it.
 - [ ] What happens on partial failure halfway through a multi-step operation? Is the system in a recoverable state?
+- [ ] What fails silently — succeeding just enough that nobody notices until the damage compounds?
 - [ ] What is the worst thing a malicious or careless user can do through this, and what stops them? (Cross-check `references/security.md` and `references/offensive-security.md`.)
 
 ### Scale and performance
@@ -65,12 +84,14 @@ Attack the plan with questions derived from the plan itself. Run at most 5 per r
 - [ ] How will you know it is working in production (logs, metrics, health checks, alerts)?
 - [ ] How do you deploy it, and how do you roll it back? (If there is no rollback, the plan is not done.)
 - [ ] What does the on-call person need to know at 2 AM that is not written down yet?
+- [ ] Where did we get lucky in this plan — which step works only because nothing went wrong, and what catches it when luck runs out?
 
 ### Trade-offs and acceptance
 
 - [ ] What did you deliberately choose NOT to optimize, and why is that the right call?
 - [ ] What is the acceptance test — the concrete check that decides "ship" vs "not yet"?
 - [ ] If you had half the time, what would you cut? (If you cannot answer, the plan is not prioritized.)
+- [ ] Which contributing factors — not a single root cause — would combine to kill this, and which one have you left unmitigated?
 
 ## Running the grill
 
@@ -83,6 +104,9 @@ Attack the plan with questions derived from the plan itself. Run at most 5 per r
 
 ## Sources
 
-- https://en.wikipedia.org/wiki/Work_breakdown_structure
-- https://www.gov.uk/service-manual/agile-delivery
-- https://martinfowler.com/articles/riskDrivenDesign.html
+- https://github.com/raphaelthomas/tech-operator-crm-cards/blob/HEAD/learn/pre-mortem.md
+- https://github.com/christian-clayton/workflow/blob/HEAD/skills/thinking-and-reasoning/pre-mortem-and-red-teaming/SKILL.md
+- https://github.com/letpeoplework/letpeopleworkshop/blob/HEAD/skills/facilitation-practices/practices/pre-mortem.md
+- https://github.com/lev-os/agents/blob/HEAD/skills-db/thinking/patterns/blameless-postmortems/SKILL.md
+- https://github.com/ilv78/art-world-hub/blob/HEAD/docs/postmortems/POSTMORTEM_WORKFLOW.md
+- https://sre.google/sre-book/postmortem-culture/
