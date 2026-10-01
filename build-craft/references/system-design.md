@@ -85,6 +85,86 @@ Production patterns for scalable, resilient distributed systems: partitioning, c
 - [ ] All retryable mutating endpoints accept a **client-generated idempotency key**; at-least-once delivery assumed everywhere; exactly-once never claimed.
 - [ ] RTO/RPO documented per data store; backups automated to match RPO; ≥1 copy isolated from the primary blast radius; **restore tested on schedule**; PITR exists (replication is not backup).
 
+## Architecture modeling with the C4 model (Context, Container, Component, Code) (added 2026-10-01)
+
+- [ ] **C4 model in Mermaid**: Architecture diagrams follow the **C4 model** rendered natively in Mermaid code blocks so they live in markdown docs alongside code and diff cleanly in PRs — never unversioned PNGs or external board links.
+- [ ] **L1 System Context (`C4Context`)**: Maps system boundaries, primary personas, and external integrations (payment gateways, legacy backends, identity providers). Every external dependency is named.
+  ```mermaid
+  C4Context
+    title System Context (L1) — Online Commerce Platform
+    Person(customer, "Customer", "Browses catalog, places orders, and tracks shipments")
+    System(commerceSys, "Commerce Platform", "Handles user auth, cart, order placement, and inventory")
+    System_Ext(stripe, "Payment Gateway", "Processes credit cards and webhooks (Stripe / Adyen)")
+    System_Ext(shipping, "Logistics API", "Generates fulfillment tracking numbers")
+
+    Rel(customer, commerceSys, "Searches and orders goods", "HTTPS / JSON")
+    Rel(commerceSys, stripe, "Submits charges and tokens", "REST / TLS")
+    Rel(commerceSys, shipping, "Dispatches fulfillment orders", "gRPC / TLS")
+  ```
+- [ ] **L2 Container diagram (`C4Container`)**: Decomposes the system into deployable units (single-page apps, API services, databases, cache clusters, message brokers). Every arrow explicitly specifies communication protocol and data format (`HTTPS/JSON`, `gRPC`, `Kafka events`) — unlabeled lines fail review.
+  ```mermaid
+  C4Container
+    title Container Diagram (L2) — Core Order Architecture
+    Person(customer, "Customer", "Mobile / Web user")
+    
+    System_Boundary(platform_boundary, "Commerce Platform") {
+      Container(webSpa, "Single Page App", "Next.js / React", "Provides customer shopping storefront")
+      Container(apiGateway, "API Gateway", "Envoy / Go", "Rate limiting, TLS termination, routing")
+      Container(orderService, "Order Service", "Python / FastAPI", "Manages order state and checkout sagas")
+      ContainerDb(orderDb, "Order Database", "PostgreSQL 16", "Stores orders, ledger entries, idempotency keys")
+      ContainerQueue(eventBroker, "Event Broker", "Apache Kafka / Redpanda", "Transactional outbox events and CDC")
+      Container(inventoryWorker, "Inventory Worker", "Go / Async Worker", "Drains events, reserves warehouse stock")
+    }
+    
+    System_Ext(stripe, "Payment Gateway", "Settles charges")
+
+    Rel(customer, webSpa, "Browses and orders", "HTTPS")
+    Rel(webSpa, apiGateway, "API calls", "HTTPS / JSON")
+    Rel(apiGateway, orderService, "Proxies verified requests", "mTLS / gRPC")
+    Rel(orderService, orderDb, "Persists order & outbox records", "SQL / TLS")
+    Rel(orderService, eventBroker, "Publishes OrderPlaced", "Kafka protocol")
+    Rel(eventBroker, inventoryWorker, "Streams order events", "Kafka consumer group")
+    Rel(orderService, stripe, "Authorizes payment", "HTTPS / REST")
+  ```
+- [ ] **L3 Component diagram (`C4Component`)**: Decomposes high-traffic or complex containers into internal components (controllers, domain services, repositories, event publishers). Drawn only for containers under active refactoring or high concurrency risk.
+  ```mermaid
+  C4Component
+    title Component Diagram (L3) — Order Service Container
+    Container_Boundary(order_svc, "Order Service") {
+      Component(authFilter, "Authentication Filter", "FastAPI Middleware", "Validates JWT tokens and user claims")
+      Component(orderCtrl, "Order Controller", "REST Endpoint Handler", "Exposes /v1/orders endpoints")
+      Component(sagaOrchestrator, "Order Saga Orchestrator", "Domain Service", "Coordinates payment and reservation steps")
+      Component(orderRepo, "Order Repository", "SQLAlchemy / asyncpg", "Atomic order state persistence")
+      Component(outboxPublisher, "Outbox Publisher", "Background Task", "Polls and publishes outbox rows to Kafka")
+    }
+
+    ContainerDb(db, "Order Database", "PostgreSQL", "Stores orders and outbox")
+    ContainerQueue(kafka, "Event Broker", "Kafka", "Order events topic")
+
+    Rel(orderCtrl, authFilter, "Enforces auth on", "Internal")
+    Rel(orderCtrl, sagaOrchestrator, "Delegates checkout command to", "In-process call")
+    Rel(sagaOrchestrator, orderRepo, "Saves pending order to", "In-process call")
+    Rel(orderRepo, db, "Executes transactional write", "SQL / asyncpg")
+    Rel(outboxPublisher, db, "Reads pending outbox records", "SQL / SELECT FOR UPDATE")
+    Rel(outboxPublisher, kafka, "Emits events to", "Kafka TCP")
+  ```
+- [ ] **L4 Code diagram**: State machines, sequence flows, or class structures reserved strictly for complex domain rules and safety-critical algorithms. Drawn using Mermaid `stateDiagram-v2` or `classDiagram`.
+  ```mermaid
+  stateDiagram-v2
+    title Code Diagram (L4) — Order Lifecycle State Machine
+    [*] --> PENDING_PAYMENT
+    PENDING_PAYMENT --> PAYMENT_CONFIRMED: PaymentSuccess
+    PENDING_PAYMENT --> PAYMENT_FAILED: PaymentRejected
+    PAYMENT_CONFIRMED --> INVENTORY_RESERVED: StockLocked
+    PAYMENT_CONFIRMED --> REFUNDING: StockDepleted
+    REFUNDING --> REFUNDED: RefundSettled
+    INVENTORY_RESERVED --> FULFILLED: ShipmentDispatched
+    PAYMENT_FAILED --> [*]
+    REFUNDED --> [*]
+    FULFILLED --> [*]
+  ```
+- [ ] **Depth rules**: L1 and L2 diagrams are mandatory for every production project and committed to `docs/architecture/`; L3 is authored only for the highest-complexity container; L4 is reserved for critical algorithms or state machines. Diagrams are kept up to date in the same PR that alters container boundaries.
+
 ## Observability and SLOs
 
 - [ ] Every request-driven service emits RED per endpoint (**Rate, Errors, Duration** p50/p95/p99); every resource emits USE (**Utilization, Saturation, Errors**).
