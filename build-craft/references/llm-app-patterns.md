@@ -74,6 +74,14 @@ Concrete production patterns for LLM apps: wrappers vs frameworks, routing and g
 - [ ] Guardrails on the request path before real users arrive: input injection screening and output PII/toxicity checks.
 - [ ] Model or provider swaps go through the eval gate plus shadow traffic — never straight to production on a changelog promise.
 
+## Prompt injection defense — dual-boundary isolation (added 2026-10-01)
+
+- [ ] Boundary one is structural: user content enters the system prompt wrapped in explicit delimiters and labeled as untrusted data; it is never concatenated into instruction prose, and the system prompt states which spans are instructions (yours) versus data (theirs).
+- [ ] Boundary two is behavioral: every untrusted input is screened before the call (injection-pattern screening) and every model output is validated after (schema check, PII/toxicity policy) — a delimiter escape that survives boundary one dies at boundary two.
+- [ ] Tool and retrieval outputs get the same treatment: content from tools, documents, and plugins is injected as delimited untrusted data, never as free instructions (see ai-agents.md on tool outputs as data).
+- [ ] The eval set carries injection probes: direct instruction overrides, delimiter-escape attempts, and tool-output poisoning cases — a new prompt template or model tier must clear them before cutover.
+- [ ] Delimiter choice is tested, not assumed: the probe set includes attacks using the delimiter characters themselves, and delimiter choices are recorded in the prompt-template versioning.
+
 ## Streaming UX
 
 - [ ] Token streaming enabled for user-facing generation (SSE / WebSocket); time-to-first-token tracked as a metric with an alert threshold.

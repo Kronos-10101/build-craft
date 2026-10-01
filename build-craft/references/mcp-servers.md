@@ -27,6 +27,13 @@ Concrete rules for building correct, secure, testable MCP servers against the cu
 - [ ] Streaming responses send SSE keep-alive comment lines (starting with `:`) and set `X-Accel-Buffering: no` so proxies don't swallow the stream; SSE resumability (`Last-Event-ID`) is removed — a broken stream means the client re-issues the request with a new ID.
 - [ ] Timeouts and max message sizes configured on both transports; a hung tool call returns an error or is cancelled instead of hanging the client forever.
 
+## Remote multi-tenant servers (added 2026-10-01)
+
+- [ ] Tenant identity comes from per-request auth context, never from connection state: under the stateless revision every request carries its own authorization, so tool sets, rate-limit buckets, and handle authorizations are keyed to the authenticated tenant on each call — connection-scoped tenant memory is a defect.
+- [ ] Handles are tenant-bound: a handle minted under one tenant's credentials fails authorization under another's, returning a tool execution error naming the tenant mismatch so the model re-creates the handle under the correct tenant.
+- [ ] Tool-list narrowing per tenant is tested: the in-memory client test asserts that two tenants' credentials see different tool sets and cannot reach each other's handles.
+- [ ] SSE streaming responses are bounded per request: keep-alive comment lines and `X-Accel-Buffering: no` per the Transports section, plus a stream duration cap so one tenant's long-lived stream cannot starve others — a broken stream is re-issued with a new ID, never resumed via `Last-Event-ID`.
+
 ## Stateless design — handles, not sessions
 
 - [ ] No per-connection state: list endpoints (`tools/list`, `resources/list`, `prompts/list`) never vary per connection; tool sets may vary by the authorization presented on the request, never by connection.

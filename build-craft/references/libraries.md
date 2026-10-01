@@ -17,6 +17,8 @@ Which library to reach for per job, plus the health checks that justify the pick
 - [ ] Exactly one lockfile is committed per project (`uv.lock`, `pnpm-lock.yaml`) and CI installs frozen (`uv sync --frozen`, `pnpm install --frozen-lockfile`) — the full audit loop lives in `security.md` §Supply chain / dependency scanning.
 - [ ] Vulnerabilities and licenses are audited in CI: `uv audit` (built into uv 0.11+) for Python, `npm audit`/`pnpm audit` for JS, plus a license/dependency report on major bumps — a failing audit blocks the merge, not a quarterly ticket.
 - [ ] Dependency footprint is minimal and justified: every direct dep earns its place; prefer the stdlib or a focused module (valibot over zod on the edge) when the job is small.
+- [ ] Transitive dependency depth is gated: you checked what the dep pulls in (`pnpm why`, `uv tree`, `npm ls`) and prefer single-purpose zero-dependency packages (`picocolors`, `node:util`) over heavy utility chains (e.g. `lodash`) when only a few helpers are used.
+- [ ] Dual-package hazard checked for Node deps: the `exports` field provides both `import` and `require` entries — a CJS-only package used in an SSR or bundled app becomes a hydration or runtime crash.
 - [ ] Package manager is pinned: `packageManager` field + corepack for Node (`pnpm@11.x`), `.python-version` + `uv.lock` for Python — no "works on my machine" drift.
 - [ ] Docker builds pin base-image digests and install from the lockfile in a separate layer — never `pip install` unpinned latest at build time.
 

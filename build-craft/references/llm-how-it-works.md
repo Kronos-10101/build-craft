@@ -91,6 +91,15 @@ Scope: the concrete mechanics of modern decoder-only LLMs (tokens, embeddings, a
 - [ ] You can explain calibration: a well-calibrated model abstains at the right rate; you measure accuracy against stated confidence on your eval set and can fine-tune refusal behavior — uncalibrated confidence is the hallucination failure mode you can actually fix.
 - [ ] You can explain why LLM-as-judge works for faithfulness but not factuality: the judge can reliably compare a claim against provided context, but it shares the generator's world-knowledge gaps, so it cannot certify facts the context doesn't contain.
 
+## Capability tiers and model routing (added 2026-10-01)
+
+- [ ] You route by task-difficulty class, not by habit: simpler tasks (classification, extraction, summarization, routine code edits) go to smaller ultra-fast models (Flash/Haiku class); reasoning models (Pro/Opus class) are reserved for architecture decisions, code review, and novel debugging — the capability gap between tiers is a cost and latency lever you use deliberately.
+- [ ] You measured tokens-per-task per tier on your own workload before committing to a routing rule, because a fast-tier model that retries three times costs more than one strong-tier call.
+- [ ] The routing decision is explicit configuration (a task→tier map or a cheap classifier), never per-call judgment by the model being routed.
+- [ ] Fast-tier assignment requires clearing a documented accuracy threshold on your own eval set; anything below the threshold is escalated to the reasoning tier, never silently degraded.
+- [ ] You re-validate prompt behavior per tier instead of assuming portability: instruction-following tightness differs between tiers, so a prompt tuned on the reasoning tier is not assumed to behave the same one tier down.
+- [ ] Fallback runs up the tier ladder: if the fast tier fails validation, the same task re-runs on the reasoning tier rather than bouncing between fast-tier models.
+
 ## Sources
 
 - https://arxiv.org/abs/1706.03762 — Attention Is All You Need (Vaswani et al. 2017): the transformer, self-attention, multi-head attention, sinusoidal position encodings

@@ -44,6 +44,15 @@ How to pick and operate a managed Postgres/MySQL/SQLite platform without surpris
 - [ ] PlanetScale deploy requests (Vitess) are used for zero-downtime MySQL schema changes; on Postgres platforms the expand/contract pattern from `databases.md` handles breaking changes.
 - [ ] Branch data retention is defined: branches containing production data inherit the same access controls and deletion policy as production.
 
+## Ephemeral branches for migration rehearsal
+
+- [ ] Every schema migration is rehearsed on a fresh ephemeral branch before production: branch from prod → apply migrations → run the app test suite and load test → then apply to prod — never the reverse.
+- [ ] The branch is cut at production data volume and recency so migration timing is real: lock acquisition time, index build duration, and backfill throughput are measured on the branch and gated against the deploy window.
+- [ ] The rehearsal runs with the same guardrails as production (`SET lock_timeout = '3s'`, `CREATE INDEX CONCURRENTLY`) — rehearsing without them proves nothing about the prod run.
+- [ ] Expand/contract phases are verified across app versions on the branch: V_N and V_{N+1} are both run against it to prove backward and forward compatibility before the prod cutover.
+- [ ] CI owns the branch lifecycle: created per-PR, auto-deleted on merge/close, named per-PR with a TTL; stale branches are a cost and a production-data leak surface.
+- [ ] A fresh branch taken immediately before the prod migration serves as the pre-migration restore point; the rollback runbook names exactly how it is promoted or restored on that platform.
+
 ## Backups and PITR
 
 - [ ] The platform's PITR window (Neon: up to ~30 days on paid; Supabase: optional 7-day on paid) covers your stated RPO — written down, not assumed.
