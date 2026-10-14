@@ -1,6 +1,6 @@
 # Build & Dev Environments — how the environment is defined and reproduced
 
-Scope: how the *environment* (containers, dev shells, tool versions, builds, CI) is declared, reproduced, and verified — repo layout, `.env` conventions, and lockfile bookkeeping live in `project-structure.md` and are not repeated here. Version-sensitive claims checked 2026-09-30.
+Scope: how the *environment* (containers, dev shells, tool versions, builds, CI) is declared, reproduced, and verified — repo layout, `.env` conventions, and lockfile bookkeeping live in `project-structure.md` and are not repeated here. Version-sensitive claims checked 2026-09-30. Checked 2026-09-30.
 
 ## Docker: multi-stage, pinned, minimal
 

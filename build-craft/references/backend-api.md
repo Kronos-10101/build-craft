@@ -1,6 +1,6 @@
 # Backend API — production checklist
 
-Covers REST/HTTP semantics, versioning and compatibility, input validation, authentication/JWT hardening, authorization, rate limiting, pagination, idempotency, outbound webhooks, caching, RFC 9457 error responses, observability, health checks, long-running operations, and deployment hygiene.
+Covers REST/HTTP semantics, versioning and compatibility, input validation, authentication/JWT hardening, authorization, rate limiting, pagination, idempotency, outbound webhooks, caching, RFC 9457 error responses, observability, health checks, long-running operations, and deployment hygiene. Checked 2026-09-30.
 
 ## REST & HTTP semantics
 

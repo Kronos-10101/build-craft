@@ -26,12 +26,12 @@ OWASP's Secure Code Review distinguishes two review types — pick one before re
 
 Security depends on trust boundaries; correctness destroys value while performance only slows it; maintainability gates future risk; polish changes no risk posture. Audit in this order:
 
-1. **Threat model & surface enumeration** — trust boundaries, entry points (HTTP routes, CLI, consumers, crons), sensitive assets, attacker personas. Classify every endpoint Public / User-scoped / Elevated before reading implementation.
-2. **Security** — auth, injection, secrets, crypto (`references/security.md`).
-3. **Correctness** — behavioral pre-mortem per critical path: concurrency races, partial failure (3rd of 5 side effects fails — is the system coherent? idempotent?), boundary values (empty / zero / negative / max / unicode / timezone / clock skew), out-of-order or duplicate events, state-machine holes, resource exhaustion (unbounded queues, unpaginated queries, missing timeouts, FD leaks).
-4. **Performance** — hot paths, N+1, missing caches, over/under-fetching, missing indexes, concurrency defaults, schema basics (`references/optimization.md`, `references/databases.md`).
-5. **Maintainability** — divergent implementations of the same concern, circular deps, god modules, shared mutable state, drifted duplication, naming/contract drift, dead code, type discipline.
-6. **Polish** — docs accuracy, logging hygiene, UI consistency — last (`references/design-polish.md`).
+- [ ] **1.** **Threat model & surface enumeration** — trust boundaries, entry points (HTTP routes, CLI, consumers, crons), sensitive assets, attacker personas. Classify every endpoint Public / User-scoped / Elevated before reading implementation.
+- [ ] **2.** **Security** — auth, injection, secrets, crypto (`references/security.md`).
+- [ ] **3.** **Correctness** — behavioral pre-mortem per critical path: concurrency races, partial failure (3rd of 5 side effects fails — is the system coherent? idempotent?), boundary values (empty / zero / negative / max / unicode / timezone / clock skew), out-of-order or duplicate events, state-machine holes, resource exhaustion (unbounded queues, unpaginated queries, missing timeouts, FD leaks).
+- [ ] **4.** **Performance** — hot paths, N+1, missing caches, over/under-fetching, missing indexes, concurrency defaults, schema basics (`references/optimization.md`, `references/databases.md`).
+- [ ] **5.** **Maintainability** — divergent implementations of the same concern, circular deps, god modules, shared mutable state, drifted duplication, naming/contract drift, dead code, type discipline.
+- [ ] **6.** **Polish** — docs accuracy, logging hygiene, UI consistency — last (`references/design-polish.md`).
 
 ## Review techniques (use all four)
 

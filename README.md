@@ -46,7 +46,9 @@ The skill lives in [`build-craft/`](build-craft/) and follows the spec layout (`
 | `skill-sources.md` | Where to find skills: skills.sh, anthropics/skills, awesome lists, install methods |
 | `skill-vetting.md` | Security checklist before trusting a third-party skill (prompt-injection aware) |
 
-**Scripts** (`scripts/`) — `fetch-skill.sh` (download + verify + red-flag-scan a skill from GitHub, pinned to a commit SHA), `audit-repo.sh` (run installed linters/scanners + high-signal greps), `readiness-audit.mjs` (zero-dependency static analysis audit: secrets, backend resilience, anti-AI-slop craft, ethical UI, a11y, perf/SEO), `check-skill.sh` (validate any `SKILL.md` against the spec).
+**Scripts** (`scripts/`) — `fetch-skill.sh` (download + verify + red-flag-scan a skill from GitHub, pinned to a commit SHA), `audit-repo.sh` (run installed linters/scanners + high-signal greps), `readiness-audit.mjs` (zero-dependency static analysis audit: secrets, backend resilience, anti-AI-slop craft, ethical UI, a11y, perf/SEO), `check-skill.sh` (validate any `SKILL.md` against the spec), `craft-gate.mjs` (phase gates that enforce the P-1→P-4 workflow against run artifacts).
+
+**Run-artifact templates** (`templates/`) — starter copies of the eight run artifacts the phase gates check: `task.md`, `tasks.md`, `progress.md`, `decisions.md`, `grill.md`, `design.md`, `architecture.md`, `report.md`.
 
 **Templates** (`assets/templates/`) — `pyproject.toml` (ruff + mypy strict + pytest-cov), `.clang-format`, `.gitignore`, `.env.example`.
 
@@ -66,6 +68,27 @@ Validate with the spec checker:
 ```bash
 python3 build-craft/scripts/check-skill.sh build-craft/SKILL.md
 ```
+
+## Enforcement: phase gates
+
+The skill enforces its own workflow with phase gates. `build-craft/scripts/craft-gate.mjs` checks the run artifacts for a phase and exits 0 on pass:
+
+```bash
+# scaffold the run dir (task.md, tasks.md, progress.md, decisions.md, grill.md, design.md, architecture.md, report.md)
+node build-craft/scripts/craft-gate.mjs --init <run-dir>
+
+# gate a phase (--design adds the design-task checks, --strict additionally fails on any unnegated "fail" line in report.md,
+# --checklists requires per-checklist pass/waived attestation, --critical requires critical-path attestation)
+node build-craft/scripts/craft-gate.mjs --phase <p1|p2|p3|p4> [--design] [--strict] [--checklists f1,f2] [--critical] --dir <run-dir>
+```
+
+What each gate checks: **p1** — `task.md` has all 7 headers (goal, non-goals, decisions, file changes, risks, failure modes, rollback), every `tasks.md` task has a substantive "done when" (condition ≥20 chars, no tautologies like "it works"). **p2** — `grill.md` has ≥1 round with ≥3 substantive `Q:`/`A:` (≥30 chars each, every Q answered), an explicit `(plan updated: yes/no)` stop predicate, the `## Rubric` section, and a `## Judge pass` with ≥2 substantive `Verdict:` lines; `decisions.md` has ≥2 substantive `## D` entries (≥150 chars each) recording "why X over Y" plus source URLs (each URL must appear in the skill's `references/`) naming a file path from `task.md` `## File changes`; `task.md` lists ≥3 substantive pre-mortem failure modes (≥20 chars each). **p3** — every `tasks.md` checkbox has a substantive "done when" (open/done counts reported; `design.md` picked and grilled when `--design`). **p4** — `report.md` `## Verification` section has a pass verdict line documenting the tests, linters, and audit runs; with `--checklists`, `## Checklist attestation` lists "`<name>`: `<p>` pass, `<w>` waived" per checklist with p+w = that checklist's item count; with `--critical`, `## Critical-path` attests every MUST item in `references/critical-path.md` ("all `<N>` reviewed", "no waivers", or reasoned per-item waivers).
+
+Anti-gaming: template example content is stripped before checking — including disguised reuse (renaming EXAMPLE to Sample, etc.) detected against the template corpus — so example-only scaffolds can never satisfy a gate. A red gate blocks the phase: fix the artifact, re-run the gate, never skip it.
+
+**Honest limit.** The gate checks artifacts, not thought: thin-but-passing prose can still pass. It makes skipping expensive and visible (fabricating a plausible, cross-referenced, attested artifact is most of the work of doing it properly). Grill depth and decision quality are covered one layer up by the rubric-anchored judge pass and, for large or irreversible work, by human approval at P-2.
+
+The hard rule: do not proceed to the next phase until the gate command exits 0. A red gate means fix the artifact and re-run the gate — never skip it.
 
 ## The self-fetching bit
 
