@@ -1,6 +1,6 @@
 # Vector Databases — Embeddings and Retrieval Done Right
 
-How to turn text into vectors, store them, and retrieve them reliably for RAG and semantic search. Versions and prices are approximate, checked 2026-09-30.
+How to turn text into vectors, store them, and retrieve them reliably for RAG and semantic search. Versions and prices are approximate, checked 2026-09-30. Checked 2026-09-30.
 
 ## The embedding contract
 

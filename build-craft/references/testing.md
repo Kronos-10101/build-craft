@@ -1,6 +1,6 @@
 # Testing — how to verify software actually works
 
-Scope: the full testing discipline that ships reliable software — suite shape (pyramid, trophy, Google test sizes), unit/integration/contract/E2E, consumer-driven contracts with Pact, API testing, property-based, mutation, fuzzing, snapshot/visual, load/stress/soak, chaos engineering, TDD/BDD, test doubles, test data management, shift-left, ephemeral environments, flaky-test discipline, coverage, and CI strategy (checked 2026-09-30).
+Scope: the full testing discipline that ships reliable software — suite shape (pyramid, trophy, Google test sizes), unit/integration/contract/E2E, consumer-driven contracts with Pact, API testing, property-based, mutation, fuzzing, snapshot/visual, load/stress/soak, chaos engineering, TDD/BDD, test doubles, test data management, shift-left, ephemeral environments, flaky-test discipline, coverage, and CI strategy (checked 2026-09-30). Checked 2026-09-30.
 
 ## Suite shape — pyramid, trophy, and Google test sizes
 

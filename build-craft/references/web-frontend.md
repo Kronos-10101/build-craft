@@ -1,6 +1,6 @@
 # Web Frontend — production checklist
 
-Pass/fail checks for semantic HTML, WCAG 2.2 AA accessibility, mobile ergonomics, Core Web Vitals, technical SEO, asset optimization, and no-JS fallbacks — each verifiable by inspection, DevTools, or a command (version-sensitive claims dated, checked 2026-10-01).
+Pass/fail checks for semantic HTML, WCAG 2.2 AA accessibility, mobile ergonomics, Core Web Vitals, technical SEO, asset optimization, and no-JS fallbacks — each verifiable by inspection, DevTools, or a command (version-sensitive claims dated, checked 2026-10-01). Checked 2026-10-01.
 
 ## Semantic HTML & document structure
 
