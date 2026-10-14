@@ -1,6 +1,6 @@
 # System Design Deep — HLD and LLD from scratch
 
-How to run a design end-to-end: requirements, capacity math, component design (HLD), API sketch, then classes, patterns, and concurrency (LLD), plus the whiteboard flow. Companion to `system-design.md`, which owns the distributed-systems pattern *mechanics* (PACELC, quorum math, sharding strategies, caching internals, Raft, streaming platforms, mesh, cells, tail latency) — this file owns the *process*; pointers there replace re-teaching.
+How to run a design end-to-end: requirements, capacity math, component design (HLD), API sketch, then classes, patterns, and concurrency (LLD), plus the whiteboard flow. Companion to `system-design.md`, which owns the distributed-systems pattern *mechanics* (PACELC, quorum math, sharding strategies, caching internals, Raft, streaming platforms, mesh, cells, tail latency) — this file owns the *process*; pointers there replace re-teaching. Checked 2026-10-14.
 
 ## Running the HLD process
 

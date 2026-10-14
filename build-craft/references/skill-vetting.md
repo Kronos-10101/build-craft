@@ -1,6 +1,6 @@
 # Skill Vetting — before trusting a third-party skill
 
-A `SKILL.md` runs with **your** permissions. Its markdown is ingested as instructions, and the model cannot reliably distinguish developer instructions from ingested content — this is the textbook definition of prompt injection. Snyk Labs' "ToxicSkills" scan (Feb 2026, 3,984 skills) found 36% with prompt-injection flaws and 76 confirmed credential-theft / backdoor / exfiltration payloads; a follow-up study put the numbers at 36.82% with ≥1 security issue and 13.4% critical. Treat every third-party skill as untrusted code until it passes this checklist.
+A `SKILL.md` runs with **your** permissions. Its markdown is ingested as instructions, and the model cannot reliably distinguish developer instructions from ingested content — this is the textbook definition of prompt injection. Snyk Labs' "ToxicSkills" scan (Feb 2026, 3,984 skills) found 36% with prompt-injection flaws and 76 confirmed credential-theft / backdoor / exfiltration payloads; a follow-up study put the numbers at 36.82% with ≥1 security issue and 13.4% critical. Treat every third-party skill as untrusted code until it passes this checklist. Checked 2026-10-14.
 
 ## Why 2026 made this urgent
 

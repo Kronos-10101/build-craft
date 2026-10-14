@@ -1,6 +1,6 @@
 # Optimization — profile-first performance engineering checklist
 
-Stack-general performance playbook: measure before changing, optimize algorithms before micro-tuning, cache deliberately, gate releases on numbers. Language internals are delegated: Python (GIL, runtimes, profiling ladder) → `references/python-internals.md`; C++ (cache layout, SIMD, allocation-free paths) → `references/cpp-modern.md`; schema/index depth → `references/databases.md`.
+Stack-general performance playbook: measure before changing, optimize algorithms before micro-tuning, cache deliberately, gate releases on numbers. Language internals are delegated: Python (GIL, runtimes, profiling ladder) → `references/python-internals.md`; C++ (cache layout, SIMD, allocation-free paths) → `references/cpp-modern.md`; schema/index depth → `references/databases.md`. Checked 2026-09-30.
 
 ## Profile-first discipline
 

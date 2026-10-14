@@ -1,6 +1,6 @@
 # React / Next.js — Production Checklist
 
-Concrete pass/fail rules for React 19.2 + Next.js 16.3 App Router apps. General TS/ESLint/testing conventions live in `javascript-typescript.md`; visual design lives in `design-polish.md` and `design-distinct.md`. Version-sensitive claims dated 2026-09-30.
+Concrete pass/fail rules for React 19.2 + Next.js 16.3 App Router apps. General TS/ESLint/testing conventions live in `javascript-typescript.md`; visual design lives in `design-polish.md` and `design-distinct.md`. Version-sensitive claims dated 2026-09-30. Checked 2026-09-30.
 
 ## Version baseline (Next.js 16.3, React 19.2)
 

@@ -1,6 +1,6 @@
 # Skill Sources — where to find skills on the internet
 
-The agent uses these sources when it needs a capability this skill doesn't cover. Discover with `npx skills find <query>` first, then fall back to browsing the registries below. Every URL below was verified to resolve on 2026-09-30.
+The agent uses these sources when it needs a capability this skill doesn't cover. Discover with `npx skills find <query>` first, then fall back to browsing the registries below. Every URL below was verified to resolve on 2026-09-30. Checked 2026-09-30.
 
 ## Index local skills before searching the internet
 

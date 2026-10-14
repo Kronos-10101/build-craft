@@ -1,6 +1,6 @@
 # Security — production checklist
 
-Concrete checks mapped to OWASP Top 10:2025 (final numbering — A01 Broken Access Control through A10 Mishandling of Exceptional Conditions), plus the OWASP API Top 10:2023, auth (passkeys, OIDC, JWT hardening), LLM application security, secrets, 2026 supply-chain practice (SLSA/Sigstore), TLS, headers, post-quantum readiness, data protection, and least privilege (checked 2026-10-01).
+Concrete checks mapped to OWASP Top 10:2025 (final numbering — A01 Broken Access Control through A10 Mishandling of Exceptional Conditions), plus the OWASP API Top 10:2023, auth (passkeys, OIDC, JWT hardening), LLM application security, secrets, 2026 supply-chain practice (SLSA/Sigstore), TLS, headers, post-quantum readiness, data protection, and least privilege (checked 2026-10-01). Checked 2026-10-01.
 
 ## OWASP Top 10:2025 — concrete checks (final edition)
 
