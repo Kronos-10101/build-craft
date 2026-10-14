@@ -1,6 +1,6 @@
 # Managed Data Platforms — Choosing and Operating a Managed Database in 2026
 
-How to pick and operate a managed Postgres/MySQL/SQLite platform without surprise bills, cold-start surprises, or lock-in. Prices and tiers are approximate, checked 2026-09-30 — re-verify before quoting.
+How to pick and operate a managed Postgres/MySQL/SQLite platform without surprise bills, cold-start surprises, or lock-in. Prices and tiers are approximate, checked 2026-09-30 — re-verify before quoting. Checked 2026-09-30.
 
 ## Decide the engine and shape first
 

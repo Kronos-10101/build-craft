@@ -1,6 +1,6 @@
 # ML Model Landscape — choosing models in 2026
 
-Scope: the flagship models, model classes, and selection rules as verified on 2026-09-30. Version-sensitive claims are dated; anything marked [unverified] is a carried-over claim I could not independently re-confirm this session. Internals of how models work live in `llm-how-it-works.md`.
+Scope: the flagship models, model classes, and selection rules as verified on 2026-09-30. Version-sensitive claims are dated; anything marked [unverified] is a carried-over claim I could not independently re-confirm this session. Internals of how models work live in `llm-how-it-works.md`. Checked 2026-09-30.
 
 ## Flagship models by lab (checked 2026-09-30)
 

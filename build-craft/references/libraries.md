@@ -1,6 +1,6 @@
 # Libraries — Best Picks, in Detail
 
-Which library to reach for per job, plus the health checks that justify the pick — all versions and statuses checked 2026-09-30. Project conventions always win over this list.
+Which library to reach for per job, plus the health checks that justify the pick — all versions and statuses checked 2026-09-30. Project conventions always win over this list. Checked 2026-09-30.
 
 ## Library selection rubric — adopt vs build vs skip
 

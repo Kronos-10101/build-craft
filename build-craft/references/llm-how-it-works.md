@@ -1,6 +1,6 @@
 # How LLMs Work — mental models for builders
 
-Scope: the concrete mechanics of modern decoder-only LLMs (tokens, embeddings, attention, training stages, decoding, KV cache, failure modes) so you can reason about cost, latency, and reliability from first principles. Model-ecosystem specifics live in `ml-landscape.md`.
+Scope: the concrete mechanics of modern decoder-only LLMs (tokens, embeddings, attention, training stages, decoding, KV cache, failure modes) so you can reason about cost, latency, and reliability from first principles. Model-ecosystem specifics live in `ml-landscape.md`. Checked 2026-10-14.
 
 ## Tokens and tokenization
 

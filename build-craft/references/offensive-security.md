@@ -1,6 +1,6 @@
 # Offensive Security — think like an attacker, build like a defender
 
-Scope: how each attack class works from the attacker's point of view and the concrete prevention that kills it — mechanism first, then defense; defensive and explanatory, never operational instructions. Covers classic web attacks, API-specific attacks (OWASP API Top 10:2023), JWT/OAuth abuse, GraphQL abuse, and LLM/agent attacks (OWASP LLM Top 10:2025) (checked 2026-09-30).
+Scope: how each attack class works from the attacker's point of view and the concrete prevention that kills it — mechanism first, then defense; defensive and explanatory, never operational instructions. Covers classic web attacks, API-specific attacks (OWASP API Top 10:2023), JWT/OAuth abuse, GraphQL abuse, and LLM/agent attacks (OWASP LLM Top 10:2025) (checked 2026-09-30). Checked 2026-09-30.
 
 ## Reconnaissance and footprinting
 
