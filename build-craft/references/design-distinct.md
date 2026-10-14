@@ -125,11 +125,11 @@ An LLM outputs the statistical median of its training data: Tailwind docs exampl
 
 ## The 5 zero-tolerance rules — the anti-slop gate
 
-1. **Zero decorative icons**: if an icon is not an interactive control (search, menu, close, chevron, download, expand), delete it. No `Briefcase` on a job card, no `TrendingUp` on a growth stat, no `IndianRupee` on a salary card — typography, label hierarchy, and tabular data are the visual hero.
-2. **No colored icon badges**: ban `w-6 h-6 rounded-md bg-blue-50 text-blue-600` (and friends) sitting on cards as decoration.
-3. **Typography and tabular numbers are the hero**: all metrics in `font-mono tabular-nums font-semibold`; micro-labels in `text-[11px] font-semibold uppercase tracking-wider text-slate-400`.
-4. **Unified neutral elevation over rainbow borders**: one disciplined surface token — light `bg-white border border-slate-200/90 shadow-[0_1px_2px_rgba(0,0,0,0.03)]`, dark `bg-slate-900/60 border border-slate-800/80`. Ban `border-emerald-200`, `border-indigo-200`, `border-sky-200`. Color is for semantic indicators only (a `+14.2%` delta, an alert) — never decoration.
-5. **No fake radar pings**: `animate-ping` on a static badge is an instant tell. Status = a solid, refined 6px dot (`h-1.5 w-1.5 rounded-full`) for real state only.
+- [ ] **1.** **Zero decorative icons**: if an icon is not an interactive control (search, menu, close, chevron, download, expand), delete it. No `Briefcase` on a job card, no `TrendingUp` on a growth stat, no `IndianRupee` on a salary card — typography, label hierarchy, and tabular data are the visual hero.
+- [ ] **2.** **No colored icon badges**: ban `w-6 h-6 rounded-md bg-blue-50 text-blue-600` (and friends) sitting on cards as decoration.
+- [ ] **3.** **Typography and tabular numbers are the hero**: all metrics in `font-mono tabular-nums font-semibold`; micro-labels in `text-[11px] font-semibold uppercase tracking-wider text-slate-400`.
+- [ ] **4.** **Unified neutral elevation over rainbow borders**: one disciplined surface token — light `bg-white border border-slate-200/90 shadow-[0_1px_2px_rgba(0,0,0,0.03)]`, dark `bg-slate-900/60 border border-slate-800/80`. Ban `border-emerald-200`, `border-indigo-200`, `border-sky-200`. Color is for semantic indicators only (a `+14.2%` delta, an alert) — never decoration.
+- [ ] **5.** **No fake radar pings**: `animate-ping` on a static badge is an instant tell. Status = a solid, refined 6px dot (`h-1.5 w-1.5 rounded-full`) for real state only.
 
 ## Before / after — killing the icon-box stat card
 

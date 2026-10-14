@@ -1,6 +1,6 @@
 # Hosting — servers, hosting models, and deployment operations
 
-The request lifecycle from DNS to database, every hosting model with 2026 price bands, a workload-based chooser, deployment patterns, and GPU hosting economics. Prices approximate, checked 2026-09-30 — re-verify before deciding.
+The request lifecycle from DNS to database, every hosting model with 2026 price bands, a workload-based chooser, deployment patterns, and GPU hosting economics. Prices approximate, checked 2026-09-30 — re-verify before deciding. Checked 2026-09-30.
 
 ## The request lifecycle — what to check at each hop
 

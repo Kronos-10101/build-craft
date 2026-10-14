@@ -1,6 +1,6 @@
 # Databases — production checklist
 
-Covers data modeling and types, normalization, indexing (strategy + type matrix), EXPLAIN discipline, migrations, transactions and isolation, N+1 detection, connection pooling, backups/PITR, replication, Postgres 17/18/19 features, and maintenance. Managed-platform comparison lives in `managed-data-platforms.md`.
+Covers data modeling and types, normalization, indexing (strategy + type matrix), EXPLAIN discipline, migrations, transactions and isolation, N+1 detection, connection pooling, backups/PITR, replication, Postgres 17/18/19 features, and maintenance. Managed-platform comparison lives in `managed-data-platforms.md`. Checked 2026-09-30.
 
 ## Data modeling & types
 
