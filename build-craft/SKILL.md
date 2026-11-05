@@ -102,6 +102,7 @@ Gate: `node scripts/craft-gate.mjs --phase p3 --dir <run-dir>`. Do not proceed t
 - Run the linters/typecheckers the checklists demand.
 - Execute `scripts/audit-repo.sh <repo-path>` — or `node scripts/audit-repo.mjs <repo-path>` on Windows/PowerShell without WSL (same checks, cross-platform) — and treat its output as findings, not noise.
 - For web apps, also run `node scripts/readiness-audit.mjs <project-path> --ci` — the 46-rule production-readiness gate (security, resilience, anti-slop craft, ethical UI, formatting, a11y, perf/SEO). No critical blockers ship.
+- When the change includes user-facing prose (README/docs/report text), also run `node scripts/prose-scan.mjs <paths>` and fix every hard flag — or record it as accepted with a one-line reason, same discipline as any other P-4 check.
 - Debug before you fix: when a test, build, or audit check fails, investigate root cause before changing code — read the full output/trace, isolate the divergence point, form a single hypothesis, prove it with evidence, then fix. Never patch blind against a red suite.
 - Fill the verification section of `report.md`: what ran, what passed, what was waived and why. For routed checklists, add `## Checklist attestation` with one "`<name>`: `<p>` pass, `<w>` waived" line per checklist (p+w = that checklist's `- [ ]` item count) and gate with `--checklists <f1,f2>`.
 - **Critical path**: add `## Critical-path` to `report.md` walking all MUST items in `references/critical-path.md` — either "all `<N>` reviewed, no waivers" (exact count) or per-item waiver lines with reasons. **NEVER silently drop a critical-path item.** Gate with `--critical`.
@@ -145,6 +146,7 @@ Read `references/critical-path.md` first on every build or audit task — it is 
 | Building MCP servers | `references/mcp-servers.md` |
 | LLM app patterns (routing, caching, gateways) | `references/llm-app-patterns.md` |
 | Planning, implementation plans, grilling the plan | `references/planning-grill.md` |
+| Documentation / prose (README, docs, reports, PR descriptions) | `references/writing-craft.md`, scan with `node scripts/prose-scan.mjs <paths>` |
 | Look and feel / UX polish | `references/design-polish.md`, `references/design-distinct.md`, `references/design-directions.md` |
 | Repo layout, naming, branches, commits, env config | `references/project-structure.md` |
 
@@ -161,7 +163,7 @@ When the task needs a capability this skill does not cover (a framework-specific
 
 ## Output Contract
 
-- **Builds**: working code, plus a short "Verification" section (tests run, linters run, audit script output), plus a list of checklist items deliberately not met and why.
+- **Builds**: working code, plus a short "Verification" section (tests run, linters run, audit script output), plus a list of checklist items deliberately not met and why. If prose was scanned in P-4, the Verification section includes the prose-scan verdict line.
 - **Audits**: findings ordered by severity (Critical / High / Medium / Low / Info) per `references/audit-methodology.md`, each with `file:line` evidence; then a reviewed-clean list; then a prioritized fix plan.
 - **Plans**: the implementation plan from `references/planning-grill.md` (goal, non-goals, decisions, file-by-file changes, test plan, risks, rollback), plus the top questions the grill raised and how they were resolved.
 - Keep prose tight. Report checklist verdicts; never paste checklist contents back into chat.
