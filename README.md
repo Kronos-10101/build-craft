@@ -34,6 +34,7 @@ The skill lives in [`build-craft/`](build-craft/) and follows the spec layout (`
 | `hosting.md` | How servers work, hosting types and pricing models, how to choose, AI/GPU hosting |
 | `design-polish.md` | Typography, 8pt spacing, color/contrast, hierarchy, micro-interactions, empty/error/loading states, design tokens |
 | `design-distinct.md` | How to NOT look vibe-coded: the tells of generic AI sites and the concrete antidotes |
+| `motion-craft.md` | Interaction motion: the decision procedure, timing and verification (ideas from charles-ux-animation, github.com/LemonFace0309/charles-skills; underlying sources Disney's 12 principles and Laws of UX) |
 | `llm-how-it-works.md` | Tokens, transformers/attention, pretraining/SFT/RLHF, decoding params, KV cache, hallucinations |
 | `ml-landscape.md` | Labs and flagship models, open vs closed weights, model classes, how to choose a model |
 | `ai-agents.md` | Agent loop, tools, memory types, planning; LangChain/LangGraph/CrewAI/AutoGen/smolagents picker |

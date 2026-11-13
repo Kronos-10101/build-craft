@@ -147,7 +147,7 @@ Read `references/critical-path.md` first on every build or audit task — it is 
 | LLM app patterns (routing, caching, gateways) | `references/llm-app-patterns.md` |
 | Planning, implementation plans, grilling the plan | `references/planning-grill.md` |
 | Documentation / prose (README, docs, reports, PR descriptions) | `references/writing-craft.md`, scan with `node scripts/prose-scan.mjs <paths>` |
-| Look and feel / UX polish | `references/design-polish.md`, `references/design-distinct.md`, `references/design-directions.md` |
+| Look, feel and motion / UX polish | `references/design-polish.md`, `references/design-distinct.md`, `references/design-directions.md`, `references/motion-craft.md` |
 | Repo layout, naming, branches, commits, env config | `references/project-structure.md` |
 
 Read `references/security.md` for anything internet-facing or handling user data, even if the task is "just" a frontend page or a script.

@@ -188,6 +188,43 @@ Run after the build is feature-complete, before the pre-ship verification suite.
 - [ ] Every state-changing action shows a success confirmation (toast or inline message); failures show an actionable error with a retry — no silent submits.
 - [ ] No mass-produced thin or unedited AI content: every public page is genuinely helpful, accurate, and human-reviewed. Google's bar is helpful vs. unhelpful content, not human vs. AI authorship.
 
+## Interaction laws — find it, hit it, choose it, finish it
+
+The grouping, target, choice, and completion rules behind the sweep above — the laws that decide whether a layout reads correctly and a flow gets finished, before any word on it is read.
+
+- [ ] Proximity groups first: the gap between two groups is at least twice the gap inside either one, and a label sits closer to its own field than to the field above it.
+- [ ] Similarity is a contract: one look per role, everywhere — every link, every destructive action, every card of a type shares one anatomy; anything that behaves differently must look different.
+- [ ] Uniform connectedness outranks proximity and similarity: a shared container or a joining line (stepper, timeline) declares "one thing" — never park unrelated items inside one container.
+- [ ] Prägnanz before decoration: spacing and alignment show the structure first; add a border, divider, or card only when layout alone leaves the grouping ambiguous.
+- [ ] Fitts — the primary action is the largest target on the screen and sits where the pointer or thumb already rests: beside the field it submits, at the bottom of the screen on mobile.
+- [ ] Destructive actions sit apart from the primary action so a miss can't reach them; in their confirmation, Cancel takes the initial focus, the destructive button is no larger than Cancel, and its label names verb + object ("Delete address").
+- [ ] Small visuals get an expanded hit zone, not a bigger glyph — 16–24px icons, close buttons, and checkboxes expand via a centered pseudo-element:
+
+```css
+.icon-btn { position: relative; }
+.icon-btn::after {
+  content: ""; position: absolute; left: 50%; top: 50%;
+  width: max(100%, 44px); height: max(100%, 44px); translate: -50% -50%;
+}
+```
+
+- [ ] Overlapping hit zones shrink equally, never below the 24×24px WCAG 2.2 floor — if they still collide, move one action instead; an icon button inside a clickable card stacks above the card's target and stops the click from reaching it, and a row that acts as one link is one target end to end.
+- [ ] Hick — option sets people weigh against each other (plans, sort orders, settings) hold ≤7 entries per headed group; prune the options almost nobody picks before adding chrome around the rest.
+- [ ] Lookups lead with search (command palettes, country and font pickers): when the user already knows the target, search makes list length irrelevant. Onboarding and checkout take one decision per step; "recommended" appears only when a real recommendation backs it, and paid or data-sharing options are never pre-selected.
+- [ ] Miller — chunk anything past ~5 units: card numbers 4-4-4-4 (Amex 4-6-5), one-time codes 3+3, phone numbers in their national grouping, form sections of ≤5 fields, top-level navigation ≤7 entries.
+- [ ] Fixed-pattern values format as the user types, and no value is carried in the user's head between screens — repeat it where it's needed rather than making them remember or re-find it.
+- [ ] Jakob — the conventions hold: ⌘K/Ctrl+K opens the command palette, Enter submits a single-field form, account and cart live top-right, a magnifier means search and a gear means settings, links look like links. Novelty goes in the content, never in where things live; a broken convention is taught on first use while the conventional path keeps working.
+- [ ] Tesler — the product absorbs the complexity: prefill what's inferable (country from locale, city from postcode, name and email from the account), default to what most people pick, and never ask for data the product already holds; wherever an option costs money or shares data, the default is the free, private one.
+- [ ] Parkinson — forms stay short: correct `autocomplete` attributes everywhere, last-used values remembered, the common answer offered as one tap, optional fields off the main path, and a long task states its expected duration before it starts.
+- [ ] Postel — typed input parses its common forms: dates in the user's locale formats, phone and card numbers with spaces, dashes, or brackets, emails with stray spaces or capitals, pasted values with trailing whitespace; a parsed value is shown back in one clean, normalized format.
+- [ ] Values picked from a range the product already knows (a delivery day, a booking slot) get a constrained picker limited to valid choices, not a text field that can only fail.
+- [ ] Validation timing: on blur or submit, never while a field is being typed for the first time; once an error is showing, re-check on every keystroke so it clears the moment it's fixed.
+- [ ] A failed parse or submit keeps everything the user typed, and the error names the format that works, with a concrete example — input the product could have parsed is never rejected.
+- [ ] Undo beats confirmation for anything reversible: the item leaves the screen at once, a toast offers Undo for ≥5 seconds, and the request fires only when that window closes (or the page hides). Confirmations are reserved for destructive actions that can't be undone.
+- [ ] Progressive disclosure: the options most visits need are visible; the rest sit behind a "More options" expander, and a follow-up field appears only once the answer that triggers it exists — nothing most visits need is ever hidden.
+- [ ] Goal gradient: multi-step flows show position and remainder ("Step 2 of 4", "3 fields left"), count already-finished steps as done, and never read 0% after real progress; a progress fill animates `transform: scaleX` from the left edge (never `width`) and never moves backward.
+- [ ] Peak-end: every flow closes on a confirmation stating what happened and what happens next, never a bare redirect; fix the flow's worst moment (an error, a long wait) before polishing its average moments.
+
 ## Pre-ship verification suite
 
 Run this standardized audit suite before any web release is marked "done" — every command below must pass with zero blockers:
@@ -272,5 +309,6 @@ Note: bfcache eligibility and the `no-store` ban are the most-missed 2026 items 
 - https://github.com/fsu-ml/fsu-ml.github.io/blob/HEAD/.claude/skills/website-audit/references/seo/L6-structured-data.md — rich-result support status as of July 2026
 - https://github.com/michealtestimony046-glitch/frontend-first-view/blob/HEAD/docs/seo-aeo-autonomous-research.md — Google's generative-AI search guidance (foundational SEO, no llms.txt, structured data not required)
 - http://dev.to/shreysaraswatweb/frontend-performance-in-2026-the-techniques-that-actually-move-the-needle-now-445j — speculation rules as MPA-only, Chromium-only caveats
-- Instagram community checklists (udayan.builds, yatesvids, okaashish, aj.on.ai, swiperightai), Oct 2026 — post-launch ops and launch-sweep items; treated as community hygiene checklists, not primary documentation. Rank promises ("rank #1 by Friday"), backlink-from-Forbes claims, and the blanket "AI content" ban were reframed or dropped — see the scope note under Post-launch operations.
+- Instagram community checklists (udayan.builds, yatesvids, okaashish, aj.on.ai, swiperightai), Oct 2026: post-launch ops and launch-sweep items; treated as community hygiene checklists, not primary documentation. Rank promises ("rank #1 by Friday"), backlink-from-Forbes claims, and the blanket "AI content" ban were reframed or dropped; see the scope note under Post-launch operations.
 - https://github.com/jakubkrehel/skills — `better-ui` skill (MIT): static-cue rule for animated state changes, ≤150ms feedback on high-frequency interactions, icon entrance values (checked 2026-10-02)
+- https://github.com/LemonFace0309/charles-skills — `charles-ux-animation` skill: the interaction laws section (grouping, Fitts, Hick, Miller, Jakob, Tesler, Postel, goal gradient, peak-end), itself built on Jon Yablonski's Laws of UX, https://lawsofux.com (checked 2026-11-13)
