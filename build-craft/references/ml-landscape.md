@@ -2,6 +2,16 @@
 
 Scope: the flagship models, model classes, and selection rules as verified on 2026-09-30. Version-sensitive claims are dated; anything marked [unverified] is a carried-over claim I could not independently re-confirm this session. Internals of how models work live in `llm-how-it-works.md`. Checked 2026-09-30.
 
+## Contents
+
+- Flagship models by lab (checked 2026-09-30)
+- Open weights vs closed weights (checked 2026-09-30)
+- Model classes (checked 2026-09-30)
+- How to choose a model for a task (checked 2026-09-30)
+- Model routing strategy (added 2026-10-01)
+- Where to track new releases (checked 2026-09-30)
+- Sources
+
 ## Flagship models by lab (checked 2026-09-30)
 
 - [ ] You listed OpenAI's current state as: GPT-6.1 Astra scrapped Sep 28–29, 2026 after internal safety tests (Reuters) — you do not plan around it; GPT-6.1 Sol released at DevDay Sep 30, 2026 as the token-efficiency tier (~1/5 the tokens of Astra per task on DeepSWE 1.1 per OpenAI reporting) — and you verify Sol pricing on platform.openai.com before budgeting, because secondary sources report it inconsistently (checked 2026-09-30)

@@ -1,7 +1,7 @@
 # Critical Path — the MUST-tier rules
 
 Checked 2026-10-14. Distilled from all 34 reference chapters: the rules that
-prevent the most production incidents. Read this file FIRST on every build or
+prevent the most production incidents. Read this reference chapter FIRST on every build or
 audit task, before the routed domain chapters — it is the non-skippable subset.
 
 Hard rule: under time pressure, cut scope — never cut these. Each skipped item
@@ -94,4 +94,4 @@ recorded as a waiver with a one-line reason, never silently dropped.
 
 ## Sources
 
-No external source list: this file distills the MUST-tier rules from the other reference chapters in this skill — every item cites its source chapter and section inline (e.g. "planning-grill.md: Pre-mortem"). For primary sources behind those rules, see the `## Sources` section of the cited chapter.
+No external source list: this reference chapter distills the MUST-tier rules from the other reference chapters in this skill — every item cites its source chapter and section inline (e.g. "planning-grill.md: Pre-mortem"). For primary sources behind those rules, see the `## Sources` section of the cited chapter.

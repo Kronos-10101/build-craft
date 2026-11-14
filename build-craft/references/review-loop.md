@@ -2,6 +2,27 @@
 
 Scope: the per-task review discipline for delegated work: how to package a diff for a fresh reviewer, how to run the fix loop without letting it spin forever, and how to verify a result before anyone claims it is done. Read this file whenever an implementer hands work back for acceptance. Checked 2026-11-15.
 
+## Contents
+
+- Ground rules
+- Before dispatch: record the base
+- The review package: one file, full range
+- Dispatching the reviewer
+- Two verdicts, every time
+- The attention lens: global constraints verbatim
+- Never pre-judge the review
+- Where the spec is silent
+- Declined to judge: the reviewer's blind spots, ruled on
+- The bounded fix loop
+- Escalation at rounds 4 and 5
+- Scoped re-review: every fix gets checked, narrowly
+- At the cap: park with a ruling, never loop forever
+- Claim-time verification gate
+- Claim to evidence: what actually proves it
+- Proving a regression test: the red-green cycle
+- Red flags: stop and run the gate
+- Sources
+
 ## Ground rules
 
 - [ ] Every task gets its own fresh reviewer: a reviewer who did not write the code, working from the diff and the brief alone, never from the implementer's confidence.

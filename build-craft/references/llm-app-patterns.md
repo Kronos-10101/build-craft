@@ -2,6 +2,23 @@
 
 Concrete production patterns for LLM apps: wrappers vs frameworks, routing and gateways, structured output, caching, batch, retries, evals, streaming UX, cost control. Checked 2026-09-30.
 
+## Contents
+
+- Wrappers vs frameworks
+- Model routing and gateways
+- Structured output — constrained decoding, not prompt-and-pray
+- Prompt caching — prefix stability is the whole game
+- Semantic caching
+- Batch APIs — the half-price lane
+- Retries with backoff on 429s
+- Eval-driven iteration
+- Prompt injection defense — dual-boundary isolation (added 2026-10-01)
+- Streaming UX
+- Cost and latency management
+- Built-in browser AI — on-device inference in Chrome
+- Eval flywheel — loop until the target holds
+- Sources
+
 ## Wrappers vs frameworks
 
 - [ ] Default to a thin wrapper (direct API calls + your own loop) when the task is one model call, a fixed pipeline, or a simple tool loop — full control, zero framework overhead.

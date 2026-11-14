@@ -2,6 +2,18 @@
 
 Scope: the concrete mechanics of modern decoder-only LLMs (tokens, embeddings, attention, training stages, decoding, KV cache, failure modes) so you can reason about cost, latency, and reliability from first principles. Model-ecosystem specifics live in `ml-landscape.md`. Checked 2026-10-14.
 
+## Contents
+
+- Tokens and tokenization
+- Embeddings and positional information
+- The transformer block and self-attention
+- Pretraining, SFT, RLHF, DPO, RLVR
+- Decoding parameters
+- Context windows and the KV cache
+- Hallucinations
+- Capability tiers and model routing (added 2026-10-01)
+- Sources
+
 ## Tokens and tokenization
 
 - [ ] You can explain that an LLM never sees raw text: input is split into integer token IDs first, and you measured token counts with a real tokenizer (tiktoken, or the model's own Hugging Face tokenizer) instead of estimating from word counts.

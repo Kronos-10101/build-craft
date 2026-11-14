@@ -1,6 +1,22 @@
 # Design Directions — named styles with concrete recipes
 
-Picked a direction *before* generating, committed to it, and written into brand tokens (see `design-polish.md`). This file kills the "agents improvise generic styles" problem: eight named, selectable directions, each a self-contained recipe of 5–7 concrete rules. Run the anti-slop gate in `design-distinct.md` on top of whichever direction is chosen — these recipes assume the tells are already dead. Checked 2026-10-13.
+Picked a direction *before* generating, committed to it, and written into brand tokens (see `design-polish.md`). This reference chapter kills the "agents improvise generic styles" problem: eight named, selectable directions, each a self-contained recipe of 5–7 concrete rules. Run the anti-slop gate in `design-distinct.md` on top of whichever direction is chosen — these recipes assume the tells are already dead. Checked 2026-10-13.
+
+## Contents
+
+- Protocol: choosing and committing
+- 1. Quiet premium (Apple/HIG minimal)
+- 2. Terminal precision (Linear-style dark)
+- 3. Print editorial (magazine)
+- 4. Web brutalist
+- 5. Friendly rounded (soft/playful)
+- 6. Quiet luxury
+- 7. Data dense (utilitarian dashboard)
+- 8. Crafted warmth (analog/craft)
+- When one product needs two directions
+- Record the choice
+- How to choose — match the direction to the product and audience
+- Sources
 
 ## Protocol: choosing and committing
 

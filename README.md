@@ -23,6 +23,7 @@ The skill lives in [`build-craft/`](build-craft/) and follows the spec layout (`
 | `web-frontend.md` | Semantic HTML, WCAG 2.2 AA, Core Web Vitals, responsive, SEO, assets, no-JS fallbacks |
 | `browser-extensions.md` | Chrome extensions, MV3 only: ephemeral service workers, sandboxed execution, offscreen documents, permissions/activeTab, side panel, Web Store publishing |
 | `backend-api.md` | REST conventions, validation, OAuth2/JWT, rate limiting, pagination, idempotency, logging, health checks, 12-factor |
+| `api-versioning.md` | Versioning strategy, breaking-change classification, deprecation policy written as a contract, migrating consumers without breaking them |
 | `system-design.md` | Scalability, CAP trade-offs, load balancing, monolith vs microservices, resilience, observability |
 | `system-design-deep.md` | HLD vs LLD: requirements, capacity estimation, SOLID, design patterns, concurrency models, whiteboard flow |
 | `databases.md` | Normalization, indexing, migrations (expand/contract), backups/PITR, pooling, N+1, isolation levels |
@@ -36,6 +37,7 @@ The skill lives in [`build-craft/`](build-craft/) and follows the spec layout (`
 | `hosting.md` | How servers work, hosting types and pricing models, how to choose, AI/GPU hosting |
 | `design-polish.md` | Typography, 8pt spacing, color/contrast, hierarchy, micro-interactions, empty/error/loading states, design tokens |
 | `design-distinct.md` | How to NOT look vibe-coded: the tells of generic AI sites and the concrete antidotes |
+| `design-directions.md` | Eight named, selectable design directions, each a self-contained recipe of concrete rules — pick one before generating, never improvise a generic style |
 | `motion-craft.md` | Interaction motion: the decision procedure, timing and verification (ideas from charles-ux-animation, github.com/LemonFace0309/charles-skills; underlying sources Disney's 12 principles and Laws of UX) |
 | `llm-how-it-works.md` | Tokens, transformers/attention, pretraining/SFT/RLHF, decoding params, KV cache, hallucinations |
 | `ml-landscape.md` | Labs and flagship models, open vs closed weights, model classes, how to choose a model |
@@ -44,6 +46,7 @@ The skill lives in [`build-craft/`](build-craft/) and follows the spec layout (`
 | `mcp-servers.md` | Building MCP servers: tools/resources/prompts, transports, SDKs, auth, testing, security |
 | `llm-app-patterns.md` | Wrappers vs frameworks, model routing/gateways, structured output, caching, fallbacks |
 | `project-structure.md` | Folder layouts, naming, branches, Conventional Commits, `.env` handling, lockfiles, changelogs |
+| `critical-path.md` | The MUST-tier rules distilled from the domain chapters: the non-skippable subset, read first on every build or audit task |
 | `audit-methodology.md` | Scoping, order of operations (security → correctness → performance → maintainability → polish), severity levels, report format |
 | `planning-grill.md` | Task planning and allocation, implementation plan template, the Grill Me question bank and protocol |
 | `review-loop.md` | Per-task fresh-reviewer gate (BASE..HEAD review package, two verdicts), bounded fix loop, claim-time verification gate |
@@ -54,6 +57,8 @@ The skill lives in [`build-craft/`](build-craft/) and follows the spec layout (`
 **Scripts** (`scripts/`) — `fetch-skill.sh` (download + verify + red-flag-scan a skill from GitHub, pinned to a commit SHA), `audit-repo.sh` (run installed linters/scanners + high-signal greps), `readiness-audit.mjs` (zero-dependency static analysis audit: secrets, backend resilience, anti-AI-slop craft, ethical UI, a11y, perf/SEO), `check-skill.sh` (validate any `SKILL.md` against the spec), `craft-gate.mjs` (phase gates that enforce the P-1→P-4 workflow against run artifacts), `prose-scan.mjs` (scan Markdown/text prose for AI-slop patterns, hard flags fail the P-4 prose check; `--json` for pipelines; companion to `references/writing-craft.md`, adapted from [unslop](https://github.com/theclaymethod/unslop), MIT).
 
 **Run-artifact templates** (`templates/`) — starter copies of the eight run artifacts the phase gates check: `task.md`, `tasks.md`, `progress.md`, `decisions.md`, `grill.md`, `design.md`, `architecture.md`, `report.md`.
+
+**Evals** (`evals/`) — authoring-side evaluation scenarios for testing changes to this skill itself (fresh agent with the skill vs a baseline without it, scored against checkable expected behaviors); see [`build-craft/evals/README.md`](build-craft/evals/README.md). Not referenced by `SKILL.md` and not loaded at runtime.
 
 **Templates** (`assets/templates/`) — `pyproject.toml` (ruff + mypy strict + pytest-cov), `.clang-format`, `.gitignore`, `.env.example`.
 

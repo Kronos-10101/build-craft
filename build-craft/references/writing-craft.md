@@ -8,6 +8,24 @@ because generated prose defaults to a recognizable statistical median. This
 chapter is the filter: what to cut, what to protect, and the order to work in.
 Checked 2026-11-05.
 
+## Contents
+
+- Throat-clearing openers — delete, then start
+- Significance inflation — replace with the measurable claim
+- Negative parallelism — state the positive claim directly
+- Vague attribution — name the source or drop the claim
+- Chatbot residue — strip the conversation layer
+- Filler intensifiers and dead modifiers
+- Emphasis crutches and business jargon
+- Punctuation tells
+- Hedge stacking and false caution
+- Headings and titles — name the actor and the result
+- Structural tells — vary the machine rhythm
+- Protected content — do no harm (read before cutting)
+- The working method — scan, edit surgically, re-scan
+- Genre notes — the rules bend where the genre is real
+- Sources
+
 ## Throat-clearing openers — delete, then start
 
 - [ ] No "Here's the thing:", "Here's the deal:", "Here's why" — the sentence after the opener is the opener; move it up and delete the warm-up.

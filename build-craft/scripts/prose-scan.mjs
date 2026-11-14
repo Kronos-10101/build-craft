@@ -236,6 +236,7 @@ function scanFile(file) {
 
   const context = (line) => {
     const raw = (origLines[line - 1] || '').trim();
+    // 100 chars: one full line of context in most terminals — enough to find the phrase in the source without dumping whole paragraphs.
     return raw.length > 100 ? raw.slice(0, 100) + '...' : raw;
   };
   const addFinding = (category, matched, pos, detail) => {
@@ -267,6 +268,7 @@ function scanFile(file) {
   // single list item; table rows excluded — see proseUnits).
   for (const para of proseUnits(masked)) {
     const dashes = (para.text.match(/—/g) || []).length + (para.text.match(/--/g) || []).length;
+    // >= 2: a single em dash per paragraph is normal punctuation; two or more is the density at which it becomes a rhythm tell.
     if (dashes >= 2) {
       const { line } = lineCol(starts, para.start + para.text.search(/\S/));
       findings.push({
@@ -281,12 +283,15 @@ function scanFile(file) {
 
   // WARN: sentence-length burstiness.
   const sentences = splitSentences(masked);
+  // > 10 sentences: below that, a coefficient-of-variation estimate is noise — too few samples to judge rhythm.
   if (sentences.length > 10) {
     const lengths = sentences.map((s) => words(s).length);
     const value = cv(lengths);
+    // CV < 0.35: natural prose varies sentence length widely (typical CV 0.5-0.8); under 0.35 the lengths are metronome-uniform.
     if (value < 0.35) {
       warnings.push({
         metric: 'sentence-burstiness',
+        // Rounded to 3 decimals: CV differences below 0.001 are not meaningful, and 3 places keep JSON output diff-stable.
         value: Math.round(value * 1000) / 1000,
         threshold: 'CV < 0.35',
         detail: `sentence lengths are suspiciously uniform across ${sentences.length} sentences (CV ${value.toFixed(3)}); vary the rhythm — mix short declaratives with longer ones`,
@@ -295,6 +300,7 @@ function scanFile(file) {
   }
 
   // WARN: signpost-opener share.
+  // >= 3 paragraphs: with fewer, one signpost opener already exceeds any share threshold, so the metric would always fire.
   if (paras.length >= 3) {
     const signpostRe = new RegExp(`^\\s*(?:#{1,6}\\s+|[-*+]\\s+)?(${SIGNPOST_OPENERS.map(escRe).join('|')})\\b`, 'i');
     let hits = 0;
@@ -303,9 +309,11 @@ function scanFile(file) {
       if (signpostRe.test(first)) hits++;
     }
     const share = hits / paras.length;
+    // > 0.30 (30 percent): an occasional signpost is normal structure; once a third of paragraphs open with one, the scaffolding is showing.
     if (share > 0.30) {
       warnings.push({
         metric: 'signpost-openers',
+        // Rounded to 3 decimals, as with the burstiness CV above: finer precision is not meaningful for a share.
         value: Math.round(share * 1000) / 1000,
         threshold: 'share > 0.30',
         detail: `${hits} of ${paras.length} paragraphs open with a signpost (However/Moreover/Furthermore/Additionally/In conclusion) — ${(share * 100).toFixed(0)}%; let some paragraphs start with their subject instead`,
@@ -359,14 +367,14 @@ function main() {
 
   const files = collectFiles(positional[0]);
   if (files === null) {
-    console.error(`error: not a file or directory: ${positional[0]}`);
+    console.error(`error: not a file or directory: ${positional[0]} — check the path for typos, then pass an existing .md/.txt file or a directory to scan recursively`);
     process.exit(2);
   }
 
   const results = [];
   for (const f of files) {
     try { results.push(scanFile(f)); }
-    catch (e) { console.error(`error: cannot read ${f}: ${e.message}`); }
+    catch (e) { console.error(`error: cannot read ${f}: ${e.message} — check the file is readable and valid UTF-8 text`); }
   }
 
   const totalHard = results.reduce((n, r) => n + r.findings.length, 0);

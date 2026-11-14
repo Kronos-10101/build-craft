@@ -2,6 +2,23 @@
 
 Covers style, typing, environments, packaging, errors, logging, testing, HTTP/async, security, and performance basics for production Python. Complements `references/python-internals.md` (how CPython runs). Checked 2026-09-30.
 
+## Contents
+
+- Style (ruff)
+- Typing
+- Environments & dependencies (uv)
+- Packaging
+- Error handling
+- Logging
+- Testing (pytest)
+- HTTP & async
+- Security
+- Performance basics
+- Data work — leakage, missingness, honest summaries
+- Numeric pitfalls
+- Audit recipe
+- Sources
+
 ## Style (ruff)
 
 - [ ] `ruff check` passes with zero findings; config lives in `pyproject.toml`; per-file ignores justified.

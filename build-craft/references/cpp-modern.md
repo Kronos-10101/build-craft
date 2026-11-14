@@ -2,6 +2,25 @@
 
 How to write better C++17/20/23/26: check the toolchain first, then ownership, move semantics, sum types, error handling, concepts, ranges, coroutines, concurrency, and low-level optimization. Complements `c-language.md` (C + toolchain). Checked 2026-09-30.
 
+## Contents
+
+- Check the toolchain before suggesting features
+- C++26 reality (shipped 2026-03-28, working draft N5046)
+- What's broadly safe (C++23, compiler reality as of 2026-09-30)
+- RAII & smart pointers
+- Const-correctness & move semantics
+- Sum types: `optional`, `variant`, `expected`
+- Exceptions: when, and what they cost
+- Concepts & ranges
+- Coroutines — when to actually use them
+- Modules (adopt cautiously)
+- Concurrency
+- Low-level optimization
+- Views & formatting pitfalls
+- Tooling: sanitizers, clang-tidy, packages, SBOM
+- C++ on the web — Emscripten in production
+- Sources
+
 ## Check the toolchain before suggesting features
 
 Many machines do not have C++23/C++26-capable compilers. Never recommend a feature the user's toolchain cannot compile.

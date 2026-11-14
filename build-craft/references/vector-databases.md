@@ -2,6 +2,23 @@
 
 How to turn text into vectors, store them, and retrieve them reliably for RAG and semantic search. Versions and prices are approximate, checked 2026-09-30. Checked 2026-09-30.
 
+## Contents
+
+- The embedding contract
+- Picking the embedding model
+- Chunking strategy for RAG
+- ANN index families — HNSW vs IVF-PQ vs DiskANN
+- Quantization — trading recall for memory
+- Engine picks — when to use which
+- Hybrid search and filtered search
+- Multitenancy
+- Reranking — precision after cheap recall
+- Connecting the app properly
+- Evaluating retrieval quality
+- Cost heuristics
+- Red flags before committing
+- Sources
+
 ## The embedding contract
 
 - [ ] You can explain the contract: an embedding model maps text to a dense vector (e.g. 384–3072 floats) where geometric closeness ≈ semantic similarity.

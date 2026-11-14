@@ -2,6 +2,20 @@
 
 Production patterns for scalable, resilient distributed systems: partitioning, consistency, replication, caching, streaming, load balancing, service mesh, multi-region, tail latency, resilience, observability. Companion to `system-design-deep.md`, which owns the HLD/LLD design *process* (requirements, capacity math, class modeling, interview flow) — this file owns the pattern *mechanics*. Checked 2026-09-30.
 
+## Contents
+
+- Scalability and partitioning
+- Consistency, replication, and CAP/PACELC
+- Cross-service workflows (sagas)
+- Caching
+- Queues and event streaming
+- Load balancing and service mesh
+- Multi-region and cell-based architecture
+- Tail latency
+- Resilience
+- Observability and SLOs
+- Sources
+
 ## Scalability and partitioning
 
 - [ ] Every app instance is **stateless** — session/auth state lives in a shared external store, never in-memory or on local disk.

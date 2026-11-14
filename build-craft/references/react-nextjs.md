@@ -2,6 +2,23 @@
 
 Concrete pass/fail rules for React 19.2 + Next.js 16.3 App Router apps. General TS/ESLint/testing conventions live in `javascript-typescript.md`; visual design lives in `design-polish.md` and `design-distinct.md`. Version-sensitive claims dated 2026-09-30. Checked 2026-09-30.
 
+## Contents
+
+- Version baseline (Next.js 16.3, React 19.2)
+- React Compiler
+- Server vs Client Components
+- Data fetching and Cache Components
+- Routing conventions
+- Server Actions and forms
+- Images and fonts
+- Auth (proxy.ts)
+- Bundle and performance discipline
+- React 19.2 patterns
+- GSAP animations
+- Observability
+- Environment variables
+- Sources
+
 ## Version baseline (Next.js 16.3, React 19.2)
 
 - [ ] `next` is at/above 16.3.6 and `react`/`react-dom` on 19.2.x (verified via `npm ls next react`; 16.3.6 is Active LTS, checked 2026-09-30) — 16.3.6 patches the September 2026 `next/og` RCE (CVE-2026-94545); nothing below it runs in production.

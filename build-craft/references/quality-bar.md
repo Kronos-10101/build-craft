@@ -2,6 +2,22 @@
 
 Scope: setting up, enforcing, and guarding a per-project quality contract that outlives any single session — the floor, numbered thresholds with their verdict commands, ratchets, time-boxed exceptions, the diff review that catches a lowered bar, circularity ranking, and placement budgets. Checked 2026-11-15.
 
+## Contents
+
+- The contract, and what it is not
+- Writing CONSTRAINTS.md
+- Every constraint names its command
+- The floor: the bar only moves up
+- Ratchets over invented targets
+- Exceptions: owner, reason, expiry
+- Floor-guard: diff review for the five gaming moves
+- Circularity: rank the checks
+- Placement budgets: cost decides where a check runs
+- Escalation: three levels of teeth
+- Sane defaults when nobody has a number
+- Verification and red flags
+- Sources
+
 ## The contract, and what it is not
 
 - [ ] The bar lives in one file, `CONSTRAINTS.md`, at the target project's repo root: plain markdown, readable by any agent on any harness, and visible as an ordinary file in every review that touches it.

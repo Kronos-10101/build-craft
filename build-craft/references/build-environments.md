@@ -2,6 +2,21 @@
 
 Scope: how the *environment* (containers, dev shells, tool versions, builds, CI) is declared, reproduced, and verified — repo layout, `.env` conventions, and lockfile bookkeeping live in `project-structure.md` and are not repeated here. Version-sensitive claims checked 2026-09-30. Checked 2026-09-30.
 
+## Contents
+
+- Docker: multi-stage, pinned, minimal
+- Secrets never in layers
+- Devcontainers
+- Nix, devbox, Flox, devenv: pick with intent
+- Python: uv is the 2026 default
+- Version managers: mise for polyglot, single-language as fallback
+- direnv: auto-activation
+- Reproducible builds & supply-chain evidence
+- Dev/prod parity
+- CI environment strategy
+- CI/CD: gate order, the agent feedback loop, and pipeline speed
+- Sources
+
 ## Docker: multi-stage, pinned, minimal
 
 - [ ] `Dockerfile` is multi-stage with named targets (`deps`, `build`, `test`, `runtime`); build tools (compilers, package managers) exist only in earlier stages, never in the final image.

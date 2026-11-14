@@ -2,6 +2,31 @@
 
 Scope: how each attack class works from the attacker's point of view and the concrete prevention that kills it — mechanism first, then defense; defensive and explanatory, never operational instructions. Covers classic web attacks, API-specific attacks (OWASP API Top 10:2023), JWT/OAuth abuse, GraphQL abuse, and LLM/agent attacks (OWASP LLM Top 10:2025) (checked 2026-09-30). Checked 2026-09-30.
 
+## Contents
+
+- Reconnaissance and footprinting
+- Phishing
+- Credential stuffing and password spraying
+- SQL injection (and NoSQL/LDAP/XPath variants)
+- Cross-site scripting (XSS): stored, reflected, DOM-based
+- Cross-site request forgery (CSRF)
+- Server-side request forgery (SSRF), including cloud metadata
+- Insecure direct object references (IDOR / BOLA)
+- API-specific attacks: BOPLA, BFLA, business-flow abuse
+- JWT attacks
+- OAuth 2.0 / OIDC attacks
+- GraphQL abuse
+- Remote code execution: command injection and template injection
+- Insecure deserialization
+- Local and remote file inclusion (LFI / RFI)
+- XML external entity injection (XXE)
+- Prototype pollution and HTTP request smuggling
+- Prompt injection and LLM/agent attacks
+- Man in the middle (MITM)
+- Privilege escalation basics
+- Supply-chain attacks
+- Sources
+
 ## Reconnaissance and footprinting
 
 - [ ] You can explain the attacker's workflow: passive OSINT first (WHOIS, DNS records, certificate-transparency logs, search dorks, job postings, leaked documents), then active probing (subdomain enumeration, port scanning, banner grabbing) — passive is undetectable, active leaves logs.

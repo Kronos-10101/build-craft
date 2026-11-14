@@ -8,6 +8,20 @@ easing curves, springs, and named motion tokens live in `design-polish.md`;
 this chapter covers the decisions those values are picked to serve, and
 the checks that confirm the decisions worked. Checked 2026-11-13.
 
+## Contents
+
+- The decision procedure — five questions, in order
+- The frequency gate — how often decides whether it moves
+- Timing — exits run shorter and quieter
+- Origin and pairing — growth starts at the trigger
+- Directing the eye — one lead at a time
+- Meaning — movement that explains itself
+- Physical techniques — weight, arcs, and depth
+- Interruption, replacement, and dragging
+- Async feedback and optimistic state
+- Verification — prove the motion, not the intention
+- Sources
+
 ## The decision procedure — five questions, in order
 
 - [ ] Put every animated interaction through five questions in a fixed order: (1) should this move at all, (2) where should the eye go, (3) how should it move, (4) can people hit it and choose it, (5)

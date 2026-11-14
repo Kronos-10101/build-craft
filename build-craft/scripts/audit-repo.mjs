@@ -1,281 +1,184 @@
 #!/usr/bin/env node
+// audit-repo.mjs — cross-platform port of scripts/audit-repo.sh.
+//
+// Usage: node scripts/audit-repo.mjs [repo-path]   (defaults to current directory)
+//
+// Runs whichever of these are installed: ruff, mypy --strict, pytest with
+// coverage, bandit, pip-audit, gitleaks, clang-tidy availability note,
+// cppcheck — plus high-signal greps for secrets, banned patterns, and debt.
+// Missing tools are skipped with a note, never fatal. Node standard library
+// only: no dependencies, works on Windows PowerShell without WSL.
+//
+// This is a triage aid, not a verdict. Every hit needs human/agent review.
 
-/**
- * ══════════════════════════════════════════════════════════════════════════
- * BUILD-CRAFT UNIVERSAL REPOSITORY AUDITOR (v2.0)
- * ══════════════════════════════════════════════════════════════════════════
- *
- * Universal, cross-platform repository triage and audit engine.
- * Zero external dependencies — pure Node.js stdlib.
- * Runs natively on Windows (pwsh/cmd), macOS, and Linux without Bash/WSL.
- *
- * Checks:
- * 1. Language toolchains (Python, JS/TS, C/C++)
- * 2. Static analysis, linters & typecheckers
- * 3. Test suites with fast triage
- * 4. High-precision secret detection
- * 5. Banned & dangerous patterns (eval, exec, hardcoded tokens, debug leftovers)
- *
- * Usage:
- *   node audit-repo.mjs [path] [options]
- *
- * Options:
- *   --ci        Exit code 1 if critical issues or failing tests are found
- *   --strict    Exit code 1 if any warnings or unformatted files exist
- *   --json      Output pure JSON report
- */
+import { spawnSync } from "node:child_process";
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join, resolve, relative } from "node:path";
 
-import fs from 'node:fs';
-import path from 'node:path';
-import { execSync } from 'node:child_process';
-
-const args = process.argv.slice(2);
-const isJson = args.includes('--json');
-const isStrict = args.includes('--strict');
-const isCi = args.includes('--ci');
-
-let targetPath = '.';
-for (const arg of args) {
-  if (!arg.startsWith('--')) {
-    targetPath = arg;
-    break;
-  }
-}
-
-const rootDir = path.resolve(targetPath);
-
-if (!fs.existsSync(rootDir)) {
-  console.error(`Error: Directory not found: ${rootDir}`);
+const REPO = resolve(process.argv[2] || ".");
+try {
+  process.chdir(REPO);
+} catch {
+  console.error(`error: cannot cd to ${process.argv[2] || "."} — check the path exists and is a directory (usage: node scripts/audit-repo.mjs [repo-path])`);
   process.exit(1);
 }
+console.log(`=== build-craft audit: ${REPO} ===`);
 
-const colors = {
-  reset: '\x1b[0m',
-  bold: '\x1b[1m',
-  dim: '\x1b[2m',
-  green: '\x1b[32m',
-  yellow: '\x1b[33m',
-  red: '\x1b[31m',
-  cyan: '\x1b[36m',
-  magenta: '\x1b[35m'
-};
+const section = (name) => console.log(`\n--- ${name} ---`);
+const skip = (tool) => console.log(`(skip: ${tool} not installed — install it to enable this check; the rest of the audit still runs)`);
 
-function log(msg = '') {
-  if (!isJson) console.log(msg);
+// Run a tool; returns "ran" | "missing". Non-zero exits are fine (triage aid).
+function runTool(cmd, args, silent = false) {
+  const r = spawnSync(cmd, args, { encoding: "utf8" });
+  if (r.error && r.error.code === "ENOENT") return "missing";
+  if (!silent) {
+    if (r.stdout) process.stdout.write(r.stdout);
+    if (r.stderr) process.stderr.write(r.stderr);
+  }
+  return "ran";
 }
 
-function header(title) {
-  log(`\n${colors.bold}${colors.cyan}--- ${title} ---${colors.reset}`);
-}
-
-function haveTool(cmd) {
+function topLevelFiles() {
   try {
-    const isWin = process.platform === 'win32';
-    const checkCmd = isWin ? `where.exe ${cmd}` : `command -v ${cmd}`;
-    execSync(checkCmd, { stdio: 'ignore' });
-    return true;
+    return readdirSync(REPO);
   } catch {
-    return false;
+    return [];
   }
 }
+const hasAny = (names) => topLevelFiles().some((f) => names.includes(f));
+const hasExt = (exts) =>
+  topLevelFiles().some((f) => exts.some((e) => f.endsWith(e)));
 
-function runCmd(cmd, desc) {
-  header(desc || cmd);
+// --- recursive content search (portable replacement for grep -r) ---
+const EXCLUDE_DIRS = new Set([
+  ".git",
+  "node_modules",
+  ".venv",
+  "venv",
+  "__pycache__",
+  "build",
+  "dist",
+]);
+
+function* walk(dir) {
+  let entries;
   try {
-    const out = execSync(cmd, { cwd: rootDir, encoding: 'utf-8', stdio: ['ignore', 'pipe', 'pipe'] });
-    if (!isJson && out.trim()) console.log(out.trim());
-    return { ok: true, output: out.trim() };
-  } catch (err) {
-    const errOut = (err.stdout || '') + '\n' + (err.stderr || '');
-    if (!isJson) console.log(`${colors.red}${errOut.trim() || err.message}${colors.reset}`);
-    return { ok: false, output: errOut.trim() };
+    entries = readdirSync(dir, { withFileTypes: true });
+  } catch {
+    return;
+  }
+  for (const e of entries) {
+    if (e.isDirectory()) {
+      if (EXCLUDE_DIRS.has(e.name)) continue;
+      yield* walk(join(dir, e.name));
+    } else if (e.isFile()) {
+      yield join(dir, e.name);
+    }
   }
 }
 
-const findings = {
-  critical: [],
-  warnings: [],
-  info: []
-};
-
-log(`${colors.bold}${colors.magenta}=== BUILD-CRAFT REPO AUDIT: ${rootDir} ===${colors.reset}`);
-
-// ----------------------------------------------------------------------
-// 1. Language Detection & Toolchain Checks
-// ----------------------------------------------------------------------
-
-const filesInRoot = fs.readdirSync(rootDir);
-const hasPy = filesInRoot.some(f => f.endsWith('.py') || f === 'pyproject.toml' || f === 'setup.cfg');
-const hasJsTs = filesInRoot.some(f => f === 'package.json' || f === 'tsconfig.json');
-const hasC = filesInRoot.some(f => f.endsWith('.c') || f.endsWith('.cpp') || f === 'CMakeLists.txt' || f === 'Makefile');
-
-// --- Python ---
-if (hasPy) {
-  log(`\n${colors.bold}[Python Project Detected]${colors.reset}`);
-  if (haveTool('ruff')) {
-    const r1 = runCmd('ruff check .', 'Ruff Linter');
-    if (!r1.ok) findings.warnings.push({ title: 'Ruff linter findings', tool: 'ruff' });
-    const r2 = runCmd('ruff format --check .', 'Ruff Format Check');
-    if (!r2.ok) findings.warnings.push({ title: 'Ruff format mismatches', tool: 'ruff' });
-  } else {
-    log(`${colors.dim}(skip: ruff not installed)${colors.reset}`);
-  }
-
-  if (haveTool('mypy')) {
-    const target = fs.existsSync(path.join(rootDir, 'src')) ? 'src/' : '.';
-    const m = runCmd(`mypy --strict ${target}`, 'Mypy Strict Typecheck');
-    if (!m.ok) findings.warnings.push({ title: 'Mypy type errors', tool: 'mypy' });
-  }
-
-  if (haveTool('pytest')) {
-    const p = runCmd('pytest -q -m "not slow"', 'Pytest Unit Tests');
-    if (!p.ok) findings.critical.push({ title: 'Failing Pytest tests', tool: 'pytest' });
-  }
-}
-
-// --- Node / TypeScript ---
-if (hasJsTs) {
-  log(`\n${colors.bold}[JavaScript/TypeScript Project Detected]${colors.reset}`);
-  const pkgJsonPath = path.join(rootDir, 'package.json');
-  if (fs.existsSync(pkgJsonPath)) {
+function grepFiles(regex, { invert = null, limit = Infinity } = {}) {
+  const hits = [];
+  for (const f of walk(REPO)) {
+    let buf;
     try {
-      const pkg = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf-8'));
-      if (pkg.scripts?.test && haveTool('npm')) {
-        const t = runCmd('npm test', 'npm test');
-        if (!t.ok) findings.critical.push({ title: 'Failing npm tests', tool: 'npm' });
-      }
-      if (pkg.scripts?.lint && haveTool('npm')) {
-        const l = runCmd('npm run lint', 'npm run lint');
-        if (!l.ok) findings.warnings.push({ title: 'npm lint errors', tool: 'npm' });
-      }
-    } catch {}
-  }
-}
-
-// --- C / C++ ---
-if (hasC) {
-  log(`\n${colors.bold}[C/C++ Files Detected]${colors.reset}`);
-  if (haveTool('cppcheck')) {
-    const cp = runCmd('cppcheck --enable=warning,performance,portability --error-exitcode=1 .', 'cppcheck');
-    if (!cp.ok) findings.warnings.push({ title: 'cppcheck findings', tool: 'cppcheck' });
-  }
-}
-
-// ----------------------------------------------------------------------
-// 2. High-Precision Secret Scanning & Banned Patterns
-// ----------------------------------------------------------------------
-header('Secret & Dangerous Pattern Scanner');
-
-const ignoreDirs = new Set(['.git', 'node_modules', '.venv', 'venv', '__pycache__', 'dist', 'build', 'target', '.next', '.gemini']);
-const secretPatterns = [
-  { name: 'API Key Assignment', regex: /api[_-]?key\s*[:=]\s*["']([A-Za-z0-9_\-]{16,})["']/i },
-  { name: 'Generic Secret Assignment', regex: /secret\s*[:=]\s*["']([A-Za-z0-9_\-]{16,})["']/i },
-  { name: 'Private Key Header', regex: /-----BEGIN [A-Z ]*PRIVATE KEY-----/ },
-  { name: 'AWS Access Key ID', regex: /AKIA[0-9A-Z]{16}/ },
-  { name: 'GitHub Personal Access Token', regex: /gh[pousr]_[A-Za-z0-9_]{36,}/ }
-];
-
-const dangerousPatterns = [
-  { name: 'Direct eval() usage', regex: /\beval\s*\(/ },
-  { name: 'Direct exec() usage in Python', regex: /\bexec\s*\(/ },
-  { name: 'Unsanitized os.system()', regex: /\bos\.system\s*\(/ },
-  { name: 'Disabled TLS verification', regex: /verify\s*=\s*False|NODE_TLS_REJECT_UNAUTHORIZED\s*=\s*['"]?0['"]?/i }
-];
-
-let scannedFiles = 0;
-let secretHits = 0;
-let dangerousHits = 0;
-
-function scanDir(dir) {
-  try {
-    const entries = fs.readdirSync(dir, { withFileTypes: true });
-    for (const ent of entries) {
-      if (ent.isDirectory()) {
-        if (!ignoreDirs.has(ent.name)) {
-          scanDir(path.join(dir, ent.name));
-        }
-      } else if (ent.isFile()) {
-        const ext = path.extname(ent.name).toLowerCase();
-        if (['.png', '.jpg', '.jpeg', '.gif', '.ico', '.pdf', '.exe', '.dll', '.so', '.dylib', '.zip', '.tar', '.gz', '.woff', '.woff2'].includes(ext)) {
-          continue;
-        }
-
-        const fullPath = path.join(dir, ent.name);
-        try {
-          const stats = fs.statSync(fullPath);
-          if (stats.size > 1024 * 1024 * 2) continue;
-
-          const content = fs.readFileSync(fullPath, 'utf-8');
-          scannedFiles++;
-          const lines = content.split('\n');
-
-          for (let i = 0; i < lines.length; i++) {
-            const line = lines[i];
-            const lineNum = i + 1;
-
-            for (const sp of secretPatterns) {
-              if (sp.regex.test(line)) {
-                if (!/example|placeholder|xxx|your_|changeme|dummy|mock/i.test(line)) {
-                  secretHits++;
-                  findings.critical.push({
-                    title: `Potential Secret: ${sp.name}`,
-                    file: path.relative(rootDir, fullPath),
-                    line: lineNum,
-                    snippet: line.trim().slice(0, 80)
-                  });
-                }
-              }
-            }
-
-            for (const dp of dangerousPatterns) {
-              if (dp.regex.test(line)) {
-                dangerousHits++;
-                findings.warnings.push({
-                  title: `Dangerous Call: ${dp.name}`,
-                  file: path.relative(rootDir, fullPath),
-                  line: lineNum,
-                  snippet: line.trim().slice(0, 80)
-                });
-              }
-            }
-          }
-        } catch {}
+      const st = statSync(f);
+      if (st.size > 4 * 1024 * 1024) continue; // skip huge files: the 4 MB cap keeps the scan fast and in-memory; source files above it are generated or binary in practice
+      buf = readFileSync(f);
+    } catch {
+      continue;
+    }
+    if (buf.includes(0)) continue; // binary
+    const lines = buf.toString("utf8").split("\n");
+    for (let i = 0; i < lines.length; i++) {
+      if (regex.test(lines[i])) {
+        if (invert && invert.test(lines[i])) continue;
+        // 200-char excerpt: long enough to judge the hit in context, short enough to keep triage output scannable.
+        hits.push(`${relative(REPO, f)}:${i + 1}:${lines[i].trim().slice(0, 200)}`);
+        if (hits.length >= limit) return hits;
       }
     }
-  } catch {}
+  }
+  return hits;
 }
 
-scanDir(rootDir);
-
-log(`Scanned ${scannedFiles} source files.`);
-if (secretHits === 0 && dangerousHits === 0) {
-  log(`${colors.green}✓ Zero secret patterns or dangerous calls detected.${colors.reset}`);
+// --- Python ---
+const pyProject = hasAny(["pyproject.toml"]) || hasExt([".py"]) || hasAny(["setup.cfg"]);
+const ruffPresent = runTool("ruff", ["--version"], true) === "ran"; // probe only
+if (ruffPresent || pyProject) {
+  section("ruff check");
+  if (ruffPresent) runTool("ruff", ["check", "."]);
+  else skip("ruff");
+  section("ruff format --check");
+  if (ruffPresent) runTool("ruff", ["format", "--check", "."]);
+  else skip("ruff");
+}
+section("mypy --strict");
+if (runTool("mypy", ["--version"], true) === "ran") {
+  const srcDir = topLevelFiles().includes("src") ? "src/" : ".";
+  runTool("mypy", ["--strict", srcDir]);
 } else {
-  if (secretHits > 0) log(`${colors.red}✗ Detected ${secretHits} potential secrets!${colors.reset}`);
-  if (dangerousHits > 0) log(`${colors.yellow}! Detected ${dangerousHits} dangerous calls.${colors.reset}`);
+  skip("mypy");
+}
+section("pytest");
+if (runTool("pytest", ["--version"], true) === "ran") runTool("pytest", ["-q", "-m", "not slow"]);
+else skip("pytest");
+section("bandit");
+if (runTool("bandit", ["--version"], true) === "ran") runTool("bandit", ["-r", "src/", ".", "-x", "./tests"]);
+else skip("bandit");
+section("pip-audit");
+if (runTool("pip-audit", ["--version"], true) === "ran") runTool("pip-audit", []);
+else skip("pip-audit");
+
+// --- C ---
+if (hasExt([".c", ".h"]) || hasAny(["CMakeLists.txt", "Makefile"])) {
+  section("C files present");
+  console.log("ensure CI builds with: -Wall -Wextra -Werror -Wpedantic -Wconversion");
+  console.log("ensure CI runs tests under: -fsanitize=address,undefined");
+  if (runTool("clang-tidy", ["--version"], true) === "ran") console.log("clang-tidy available");
+  else console.log("(clang-tidy not installed — see references/c-language.md)");
+  if (runTool("cppcheck", ["--version"], true) !== "missing")
+    runTool("cppcheck", ["--enable=warning,performance,portability", "--error-exitcode=1", "."]);
+  else skip("cppcheck");
 }
 
-// ----------------------------------------------------------------------
-// 3. Final Summary & Exit
-// ----------------------------------------------------------------------
-header('Audit Summary');
+// --- Secrets ---
+section("secret patterns");
+// Minimum quoted-value lengths in the regex below: 8 chars for keys/secrets, 4 for passwords — shorter quoted values are variable names or dummies, not credentials (the invert filter drops the remaining examples).
+const secretHits = grepFiles(
+  /api[_-]?key\s*[:=]\s*["'][^"']{8,}|secret\s*[:=]\s*["'][^"']{8,}|password\s*[:=]\s*["'][^"']{4,}|-----BEGIN [A-Z ]*PRIVATE KEY-----/i,
+  { invert: /example|placeholder|xxx|your_|changeme/i }
+);
+console.log(secretHits.length ? secretHits.join("\n") : "no secret patterns found");
+if (hasAny([".env"])) console.log("FINDING: .env file committed in repo — remove it from version control, add .env to .gitignore, and rotate any secrets it contained");
+section("gitleaks");
+if (runTool("gitleaks", ["version"], true) === "ran") runTool("gitleaks", ["detect", "--source", ".", "--no-git"]);
+else skip("gitleaks");
 
-log(`Critical Issues : ${findings.critical.length}`);
-log(`Warnings        : ${findings.warnings.length}`);
+// --- Banned / risky patterns ---
+section("risky patterns");
+const riskyHits = grepFiles(
+  /pickle\.loads?\(|yaml\.load\(|eval\(|exec\(|shell\s*=\s*True|os\.system|verify\s*=\s*False|strcpy\(|strcat\(|sprintf\(|gets\(/
+);
+console.log(riskyHits.length ? riskyHits.join("\n") : "none found");
 
-if (isJson) {
-  console.log(JSON.stringify(findings, null, 2));
+// --- Debt markers ---
+section("TODO/FIXME without ticket refs");
+// Limit 20: debt markers are a triage sample, not an inventory — 20 hits prove the pattern exists without flooding the report.
+const debtHits = grepFiles(/TODO|FIXME|XXX|HACK/, { limit: 20 });
+console.log(debtHits.length ? debtHits.join("\n") : "none found");
+
+// --- Structure sanity ---
+section("structure");
+for (const f of ["README.md", "LICENSE", ".gitignore"]) {
+  if (!hasAny([f])) console.log(`missing: ${f} — create it in the repo root (see references/project-structure.md)`);
 }
+if (!hasAny([".env.example"]))
+  console.log("missing: .env.example (see references/project-structure.md)");
+const locks = topLevelFiles().filter((f) =>
+  ["package-lock.json", "pnpm-lock.yaml", "poetry.lock", "uv.lock", "Cargo.lock", "go.sum"].includes(f)
+);
+// Show at most 3 lockfiles: one is expected; listing more adds noise, and more than one already signals the anomaly worth reviewing.
+console.log(locks.length ? locks.slice(0, 3).join("\n") : "no lockfile found — commit your package manager lockfile so installs are reproducible");
 
-if (isCi && findings.critical.length > 0) {
-  log(`\n${colors.red}${colors.bold}AUDIT FAILED (CI Mode): Critical issues exist.${colors.reset}`);
-  process.exit(1);
-}
-
-if (isStrict && (findings.critical.length > 0 || findings.warnings.length > 0)) {
-  log(`\n${colors.red}${colors.bold}AUDIT FAILED (Strict Mode): Warnings or critical issues exist.${colors.reset}`);
-  process.exit(1);
-}
-
-log(`\n${colors.green}${colors.bold}✓ Audit completed successfully.${colors.reset}`);
-process.exit(0);
+console.log("\n=== done. Review every hit above against the checklists in references/. ===");

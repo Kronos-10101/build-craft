@@ -2,6 +2,17 @@
 
 The agent uses these sources when it needs a capability this skill doesn't cover. Discover with `npx skills find <query>` first, then fall back to browsing the registries below. Every URL below was verified to resolve on 2026-09-30. Checked 2026-09-30.
 
+## Contents
+
+- Index local skills before searching the internet
+- Directories and CLIs
+- Repositories and collections
+- Publisher sources
+- Where installed skills live (per agent)
+- Install methods
+- Rules
+- Sources
+
 ## Index local skills before searching the internet
 
 - [ ] Before `npx skills find`, index the local skills directory before hitting the network: scan the skills directories in the per-agent table below, plus `~/.agents/skills` when it exists — a local skill that already covers the need beats a network install on speed, supply-chain risk, and reproducibility.

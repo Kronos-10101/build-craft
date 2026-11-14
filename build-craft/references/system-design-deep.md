@@ -2,6 +2,20 @@
 
 How to run a design end-to-end: requirements, capacity math, component design (HLD), API sketch, then classes, patterns, and concurrency (LLD), plus the whiteboard flow. Companion to `system-design.md`, which owns the distributed-systems pattern *mechanics* (PACELC, quorum math, sharding strategies, caching internals, Raft, streaming platforms, mesh, cells, tail latency) — this file owns the *process*; pointers there replace re-teaching. Checked 2026-10-14.
 
+## Contents
+
+- Running the HLD process
+- Requirements: functional vs non-functional
+- Capacity estimation with real numbers
+- HLD: components and data flow
+- API sketch
+- LLD: SOLID in practice
+- Design patterns worth knowing (and which to avoid)
+- Class and object modeling
+- Concurrency models: threads vs actors vs CSP
+- Whiteboarding a design in an interview
+- Sources
+
 ## Running the HLD process
 
 - [ ] Follow a loop, not a brain-dump: clarify requirements → estimate scale → sketch the API → draw the simplest working architecture → find the bottleneck → scale the bottleneck → add reliability → state trade-offs.

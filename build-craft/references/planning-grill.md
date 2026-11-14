@@ -2,6 +2,23 @@
 
 Scope: how to break a task down, allocate it, write an implementation plan, run a pre-mortem on it, and then grill it with hostile questions until every hole is closed. Read this file during P-1 and P-2 of the SKILL.md workflow. Checked 2026-09-30.
 
+## Contents
+
+- Task planning and allocation
+- Elicitation: grilling the user for intent
+- The implementation plan template
+- Spec-driven deltas: capability maps, versions, and follow-up changes
+- Pre-flight scan and plan format: interfaces between tasks
+- Persistent state planning — survive context compaction and session restarts
+- Atomic acceptance criteria
+- Pre-mortem: assume the plan already failed
+- Grill me: the question bank
+- Running the grill
+- Doubt-driven review: a fresh-context adversary for non-trivial decisions
+- Source-driven discipline: verify versioned facts against official docs
+- Rulings ledger: deviations during execution
+- Sources
+
 ## Task planning and allocation
 
 - [ ] You restated the goal in one sentence and wrote explicit non-goals — anything not in the goal sentence is a candidate non-goal until justified.

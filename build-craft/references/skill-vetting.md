@@ -4,6 +4,20 @@ A `SKILL.md` runs with **your** permissions. Its markdown is ingested as instruc
 
 Snyk also ships a runnable scanner for this work: `snyk/agent-scan` (agent-scan). Run it against a quarantined download as one signal alongside the checklist below; a clean scan does not replace reading every file.
 
+## Contents
+
+- Why 2026 made this urgent
+- The vetting checklist
+- Red-flag grep patterns
+- Threat classes to know
+- The vetting procedure (in order)
+- Retrieval verification (fetch-on-demand catalogs)
+- Update and removal hygiene
+- Sandboxed first run (for "pass with sandboxing" verdicts)
+- Baseline-first testing for skill and instruction documents
+- Verdict
+- Sources
+
 ## Why 2026 made this urgent
 
 - [ ] You know the **Clinejection** chain (Feb 2026): prompt injection in an AI triage bot → CI cache poisoning → stolen npm/VSCE publishing tokens → malicious `cline@2.3.0` with a `postinstall` payload → ~4,000 developer machines compromised in 8 hours. Lesson: a skill adjacent to CI, publishing, or credentials is a supply-chain weapon, not a helper.

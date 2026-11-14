@@ -30,32 +30,34 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 [[ -n "$REPO" && -n "$SKILL" ]] || die "usage: fetch-skill.sh <owner/repo> <skill-name> [--ref <tag|sha>] [--dest <dir>] [--force]"
-[[ "$REPO" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || die "repo must look like owner/repo"
-[[ "$SKILL" =~ ^[a-z0-9-]+$ ]] || die "skill name must be lowercase alphanumeric + hyphens"
+[[ "$REPO" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || die "repo must look like owner/repo — pass the GitHub owner and repo name only (no URL, no extra path segments)"
+[[ "$SKILL" =~ ^[a-z0-9-]+$ ]] || die "skill name must be lowercase alphanumeric + hyphens — rename the skill directory using only lowercase letters, digits, and hyphens"
 
-command -v curl >/dev/null || die "curl is required"
-command -v tar >/dev/null || die "tar is required"
+command -v curl >/dev/null || die "curl is required — install curl with your OS package manager and re-run"
+command -v tar >/dev/null || die "tar is required — install tar with your OS package manager and re-run"
 
 # 1. Resolve ref -> SHA (pin everything; floating branches are findings)
 if [[ -z "$REF" ]]; then
   REF=$(curl -fsSL "https://api.github.com/repos/$REPO" | grep -o '"default_branch": *"[^"]*"' | cut -d'"' -f4)
-  [[ -n "$REF" ]] || die "could not determine default branch for $REPO"
+  [[ -n "$REF" ]] || die "could not determine default branch for $REPO — check the repo exists and is public, or pass --ref <branch-or-tag> explicitly"
   echo "no --ref given; using default branch '$REF' (will pin to its SHA)"
 fi
 SHA=$(curl -fsSL "https://api.github.com/repos/$REPO/commits/$REF" | grep -o '"sha": *"[^"]*"' | head -1 | cut -d'"' -f4)
-[[ -n "$SHA" ]] || die "could not resolve ref '$REF' to a commit SHA"
+[[ -n "$SHA" ]] || die "could not resolve ref '$REF' to a commit SHA — check the ref for typos, or pass a full commit SHA via --ref"
 echo "pinned: $REPO @ $SHA"
 
 # 2. Download tarball for the pinned SHA
 TMP=$(mktemp -d); trap 'rm -rf "$TMP"' EXIT
 curl -fsSL "https://codeload.github.com/$REPO/tar.gz/$SHA" -o "$TMP/repo.tar.gz" \
-  || die "tarball download failed"
+  || die "tarball download failed — check your network connection and the pinned SHA above, then re-run"
 tar -xzf "$TMP/repo.tar.gz" -C "$TMP"
+# -maxdepth 1: a GitHub tarball extracts to exactly one top-level directory (<repo>-<sha>), so the first entry is the root.
 ROOT=$(find "$TMP" -maxdepth 1 -mindepth 1 -type d | head -1)
 
 # 3. Locate the skill dir (SKILL.md at depth <= 3, dir name == skill name)
+# Depth 3 covers repo-root skills and one/two levels of grouping (skills/<name>, packages/x/<name>) without wandering whole monorepos.
 SKILLDIR=$(find "$ROOT" -maxdepth 3 -type f -name SKILL.md -path "*/$SKILL/SKILL.md" | head -1 | xargs -r dirname)
-[[ -n "$SKILLDIR" ]] || die "no directory named '$SKILL' containing SKILL.md found in $REPO@$SHA"
+[[ -n "$SKILLDIR" ]] || die "no directory named '$SKILL' containing SKILL.md found in $REPO@$SHA — check the skill name matches a directory in the repo (searched to depth 3)"
 
 # 4. Verify frontmatter: name present, matches dir, description present
 python3 - "$SKILLDIR/SKILL.md" "$SKILL" <<'EOF'
@@ -63,13 +65,14 @@ import re, sys
 path, expected = sys.argv[1], sys.argv[2]
 text = open(path).read()
 m = re.match(r'^---\n(.*?)\n---\n', text, re.S)
-if not m: sys.exit("SKILL.md has no YAML frontmatter")
+if not m: sys.exit("SKILL.md has no YAML frontmatter — add a --- block at the very top containing name: and description: lines")
 fm = m.group(1)
 name = re.search(r'^name:\s*["\']?([^"\'\n]+)["\']?', fm, re.M)
 desc = re.search(r'^description:\s*["\']?(.+?)["\']?\s*$', fm, re.M)
-if not name or not desc: sys.exit("frontmatter missing name or description")
+if not name or not desc: sys.exit("frontmatter missing name or description — add both name: and description: lines inside the --- block")
 if name.group(1).strip() != expected:
     sys.exit(f"frontmatter name '{name.group(1).strip()}' != directory '{expected}'")
+# 1-1024 chars: the Agent Skills spec bounds for description (the same limits check-skill.sh enforces).
 if not (1 <= len(desc.group(1).strip()) <= 1024):
     sys.exit("description must be 1-1024 chars")
 print(f"frontmatter OK: name='{expected}'")

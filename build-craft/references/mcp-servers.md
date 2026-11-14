@@ -2,6 +2,24 @@
 
 Concrete rules for building correct, secure, testable MCP servers against the current spec: protocol basics, primitives, transports, stateless design, auth, errors, testing, deployment, injection defense. Checked 2026-09-30 against spec revision `2026-07-28`.
 
+## Contents
+
+- Spec currency and protocol basics
+- The three primitives — expose the right one
+- Transports — stdio or Streamable HTTP, nothing else
+- Remote multi-tenant servers (added 2026-10-01)
+- Stateless design — handles, not sessions
+- Deprecated features — treat as migration debt
+- SDKs and version currency
+- Tools — schemas, annotations, deterministic output
+- Error handling — two channels, never leaks
+- Auth for remote servers
+- Testing an MCP server
+- Observability and deployment
+- Security — tool poisoning and least privilege
+- WebMCP — the client-side counterpart (Early Preview)
+- Sources
+
 ## Spec currency and protocol basics
 
 - [ ] The server targets a dated spec revision and declares which one: current is **`2026-07-28`** (previous: `2025-11-25`, `2025-06-18`, `2025-03-26`, `2024-11-05`) — no "latest" hand-waving in code or docs.

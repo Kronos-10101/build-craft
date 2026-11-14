@@ -2,6 +2,24 @@
 
 Scope: scoping, ordering, techniques, and reporting for read-only audits of code and systems — what to check, in what order, and how to write findings that get fixed. Auditing and fixing are separate mandates. Checked 2026-09-30.
 
+## Contents
+
+- Ground rules
+- Scoping: pick the review type first
+- Order of operations
+- Review techniques (use all four)
+- Change review: Google's dimension order
+- Review craft: comment labels, sizing, and remedies
+- Structural audit dimensions (AI-generated code)
+- Product-quality verification gates: accessibility & Core Web Vitals
+- What to check first (cheap, high-yield)
+- Security deep pass
+- Severity levels
+- Report format
+- Re-audit
+- Receiving code review
+- Sources
+
 ## Ground rules
 
 - [ ] Every finding cites `file:line` plus a minimal quoted snippet — evidence or it doesn't exist.

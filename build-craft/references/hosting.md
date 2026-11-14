@@ -2,6 +2,24 @@
 
 The request lifecycle from DNS to database, every hosting model with 2026 price bands, a workload-based chooser, deployment patterns, and GPU hosting economics. Prices approximate, checked 2026-09-30 — re-verify before deciding. Checked 2026-09-30.
 
+## Contents
+
+- The request lifecycle — what to check at each hop
+- Shared hosting
+- VPS (virtual private server)
+- Dedicated servers and bare metal
+- PaaS (Render / Railway / Fly.io / Heroku)
+- Serverless functions (AWS Lambda and friends)
+- Edge compute (Cloudflare Workers and friends)
+- Kubernetes
+- Object storage and CDN
+- Workload chooser
+- Deployment basics
+- Launch & rollout
+- AI/GPU hosting
+- PWA install: Web Install API and origin migration
+- Sources
+
 ## The request lifecycle — what to check at each hop
 
 - [ ] DNS: A/AAAA records point at current infra, TTL dropped to ≤300 s at least 48 h before any migration, CAA records restrict which CAs may issue certs.

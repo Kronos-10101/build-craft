@@ -2,6 +2,33 @@
 
 Concrete checks mapped to OWASP Top 10:2025 (final numbering — A01 Broken Access Control through A10 Mishandling of Exceptional Conditions), plus the OWASP API Top 10:2023, auth (passkeys, OIDC, JWT hardening), LLM application security, secrets, 2026 supply-chain practice (SLSA/Sigstore), TLS, headers, post-quantum readiness, data protection, and least privilege (checked 2026-10-01). Checked 2026-10-01.
 
+## Contents
+
+- OWASP Top 10:2025 — concrete checks (final edition)
+- OWASP API Security Top 10:2023 — checks
+- Auth — passwords, passkeys, OIDC, sessions, JWT
+- Passkey implementation — Signal API, credential management, conditional create, immediate UI
+- LLM application security (OWASP LLM Top 10:2025)
+- Secrets management
+- Supply chain / dependency security (2026 practice)
+- Input validation & output encoding
+- Sanitizing untrusted HTML — Sanitizer API and Trusted Types
+- HTTPS / TLS & headers
+- Cryptography and post-quantum readiness
+- In-browser WebCrypto and Subresource Integrity (SRI)
+- Data protection
+- Detection and response
+- Least privilege
+- Destructive operations on derived paths
+- Cookie hardening matrix
+- Security headers — exact production values
+- Connection-Allowlist — one network-layer allowlist
+- Origin checks, local network access, and email verification
+- Email authentication (SPF / DKIM / DMARC)
+- Legal, privacy & compliance
+- Ethical UI & anti-dark-pattern compliance
+- Sources
+
 ## OWASP Top 10:2025 — concrete checks (final edition)
 
 - [ ] **A01 Broken Access Control** (absorbs 2021's SSRF category) — deny-by-default server-side authorization on every route; object-level ownership checks on every read/update/delete (no IDOR via URL tampering); test by swapping IDs and hitting admin routes as a low-privilege user. SSRF: never fetch raw user-supplied URLs; allow-list schemes/hosts/ports; validate the resolved IP against link-local/metadata ranges (169.254.169.254), RFC1918, and localhost before and after redirects; disable HTTP-client redirects; enforce IMDSv2 on cloud instances.

@@ -2,6 +2,20 @@
 
 Pass/fail rules for constructing tool-using agents: the loop, tools, error handling, stop conditions, memory, planning mode, human checkpoints, and framework choice. Construction discipline — not reasoning theory. Checked 2026-09-30.
 
+## Contents
+
+- The agent loop (perceive → reason → act → observe)
+- Tools / function calling done right
+- Tool failures and error-handling schemas
+- Stop conditions, stagnation, and budgets
+- Memory types and context hygiene
+- Delegating to subagents — single-task contracts (added 2026-10-01)
+- Planning vs reacting
+- Human-in-the-loop checkpoints
+- Runtime hardening
+- Frameworks — what each is best for (checked 2026-09-30)
+- Sources
+
 ## The agent loop (perceive → reason → act → observe)
 
 - [ ] The loop is explicit in code: perceive state → reason (LLM call) → act (tool dispatch) → observe result → repeat. No hidden implicit loops.
@@ -93,18 +107,6 @@ Pass/fail rules for constructing tool-using agents: the loop, tools, error handl
 - [ ] Outbound network calls go through an allowlist; a compromised tool result cannot exfiltrate to an attacker-controlled endpoint.
 - [ ] Every run carries a trace ID end-to-end: model calls, tool calls, approvals, and retries are joinable into one timeline for incident review.
 - [ ] Logs redact sensitive values (tokens, PII, credentials) before storage — audit trails are for humans, not for secret storage.
-
-## Automated evaluation & RAGAS quality gates (added 2026-10-01)
-
-- [ ] **Automated eval harness**: Every agent, tool-calling pipeline, or RAG system has an automated evaluation harness running on a versioned golden test set (50–200 diverse query-context-ground_truth triples) before prompt or tool changes merge.
-- [ ] **RAGAS core metrics and hard CI thresholds**:
-  - **Faithfulness (Groundedness) $\ge 0.85$**: Measures factual consistency by calculating the fraction of claims in the generated response that can be mathematically inferred from the retrieved context. An answer claiming unmentioned facts fails ($< 0.85$ is a deployment blocker).
-  - **Answer Relevance $\ge 0.80$**: Measures whether the response directly addresses the user's prompt without evasion or fluff. Computed via cosine similarity of reverse-generated questions to the original prompt.
-  - **Context Precision $\ge 0.75$**: Measures retrieval quality by calculating the Mean Average Precision (MAP) of ground-truth relevant chunks. All relevant context must be ranked near the top of the context window.
-  - **Context Recall $\ge 0.80$**: Measures whether the retrieval step captured all facts required to answer the ground truth. Low recall indicates chunking fragmentation or weak query expansion.
-- [ ] **Composite harmonic score & regression threshold**: The aggregate RAGAS score must not regress by $>3\%$ compared to the baseline commit, and zero individual test case may flip from passing to a hallucination.
-- [ ] **CI execution gate**: Automated evals run in CI using headless CLI execution (`pytest tests/evals/` or `ragas.evaluate()`) against cached embeddings and model snapshots. Every production defect or hallucination reported by users is converted into a regression test case in the golden set within one sprint.
-- [ ] **Synthetic test expansion**: Use RAGAS `TestsetGenerator` across documents to synthesize diverse question types (reasoning, multi-context, conditional) ensuring eval coverage goes beyond simple fact-lookup queries.
 
 ## Frameworks — what each is best for (checked 2026-09-30)
 

@@ -2,6 +2,20 @@
 
 Named reasoning patterns, multi-agent topologies, 2026 dynamic workflow patterns, optimization levers, circumstance-specific tuning, and agent evals — with when each wins. Reasoning and optimization — not framework how-tos. Checked 2026-09-30.
 
+## Contents
+
+- Workflows vs agents — Anthropic's split (Dec 2024)
+- Reasoning patterns — name the method, know when it wins
+- Multi-agent topologies
+- Agent memory architecture (added 2026-10-01)
+- Dynamic workflow patterns (Anthropic, Claude Code, June 2026)
+- Model-tier economics for dispatched work
+- Execution context hygiene for dispatched work
+- Optimizing an agent — the levers
+- Making an agent better for a SPECIFIC circumstance
+- Agent evals
+- Sources
+
 ## Workflows vs agents — Anthropic's split (Dec 2024)
 
 - [ ] The distinction is explicit: **workflows** are LLMs and tools orchestrated through predefined code paths; **agents** are systems where the model dynamically directs its own process and tool use.

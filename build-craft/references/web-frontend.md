@@ -2,6 +2,24 @@
 
 Pass/fail checks for semantic HTML, WCAG 2.2 AA accessibility, mobile ergonomics, Core Web Vitals, technical SEO, asset optimization, and no-JS fallbacks — each verifiable by inspection, DevTools, or a command (version-sensitive claims dated, checked 2026-10-01). Checked 2026-10-01.
 
+## Contents
+
+- Semantic HTML & document structure
+- Web Components
+- Accessibility (WCAG 2.2 AA)
+- Mobile & device ergonomics
+- Core Web Vitals & performance
+- Technical SEO & crawlability
+- Asset optimization
+- Forms: native controls, validation, OTP
+- UI behaviors: invokers, moves, highlights, snap
+- Launch content & interaction sweep
+- Interaction laws — find it, hit it, choose it, finish it
+- Pre-ship verification suite
+- Post-launch operations (first 48 hours)
+- Progressive enhancement / no-JS
+- Sources
+
 ## Semantic HTML & document structure
 
 - [ ] `<!DOCTYPE html>`, exactly one `<html lang="…">`, exactly one `<title>` per page.

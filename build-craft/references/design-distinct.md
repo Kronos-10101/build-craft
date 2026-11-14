@@ -1,7 +1,28 @@
 # Design Distinct — How to NOT Look Vibe-Coded
 
 Why AI-generated sites all converge on one median look, the tells that give it away in 2026, and the concrete antidotes. A site is "vibe-coded" not when AI helped build it, but when every taste decision was left at the default. Checked 2026-10-01.
-For the systematic visual-craft rules — type scales, spacing grids, token architecture, motion durations — see design-polish.md; this file is the anti-median filter.
+For the systematic visual-craft rules — type scales, spacing grids, token architecture, motion durations — see design-polish.md; this reference chapter is the anti-median filter.
+
+## Contents
+
+- Why the convergence happens
+- Visual tells — kill every one of these
+- Type tells — the 2026 rotation
+- Layout and section tells
+- Component and interaction tells
+- Copy tells
+- The antidotes — checkable rules
+- What the distinctive ones actually do — steal the principles, not the pixels
+- The 5 zero-tolerance rules — the anti-slop gate
+- Before / after — killing the icon-box stat card
+- Before / after — DOM flattening
+- Radical truthfulness — zero hallucination
+- Deep-diving skills — fetch, don't guess
+- The anti-vibecoding review pass — agent protocol
+- Copy that sells — before/after
+- Before you generate — the briefing checklist
+- The 3-second test
+- Sources
 
 ## Why the convergence happens
 

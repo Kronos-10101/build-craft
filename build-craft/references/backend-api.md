@@ -2,6 +2,26 @@
 
 Covers REST/HTTP semantics, versioning and compatibility, input validation, authentication/JWT hardening, authorization, rate limiting, pagination, idempotency, outbound webhooks, caching, RFC 9457 error responses, observability, health checks, long-running operations, and deployment hygiene. Checked 2026-09-30.
 
+## Contents
+
+- REST & HTTP semantics
+- Versioning & compatibility
+- Input validation & SSRF
+- Authentication & JWT hardening
+- Authorization
+- Rate limiting & resource consumption
+- Pagination, filtering & sorting
+- Idempotency & safe retries — the honouring protocol
+- Webhooks (outbound delivery)
+- Caching & conditional requests
+- Errors (RFC 9457 problem details)
+- Observability & instrumentation
+- Health checks & graceful shutdown
+- Long-running operations
+- Backend resilience — the 20 core rules (ops checklist)
+- Deployment & security posture
+- Sources
+
 ## REST & HTTP semantics
 
 - [ ] Resource URIs are plural nouns, never verbs (`/orders`, not `/getOrders`); genuine non-CRUD actions modeled as sub-resources (`POST /orders/{id}/cancellation`).

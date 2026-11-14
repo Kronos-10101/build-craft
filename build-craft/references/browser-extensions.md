@@ -1,6 +1,19 @@
 # Browser Extensions — Manifest V3 production checklist
 
-Pass/fail checks for Chrome extensions built on Manifest V3: manifest shape, ephemeral service workers, storage, sandboxed execution, offscreen documents, permissions and gestures, side panel wiring, and Chrome Web Store review. Each item is verifiable by reading `manifest.json`, loading the unpacked build, or inspecting the store listing draft.
+Pass/fail checks for Chrome extensions built on Manifest V3: manifest shape, ephemeral service workers, storage, sandboxed execution, offscreen documents, permissions and gestures, side panel wiring, and Chrome Web Store review. Each item is verifiable by reading `manifest.json`, loading the unpacked build, or inspecting the store listing draft. Checked 2026-11-15.
+
+## Contents
+
+- Manifest V3 only
+- Service worker: ephemeral by design
+- Storage: pick the tier on purpose
+- Sandboxed execution and CSP
+- Offscreen documents
+- Permissions, activeTab, and gestures
+- Side panel, popup, and action
+- Chrome Web Store: publishing gate
+- Pre-ship verification
+- Sources
 
 ## Manifest V3 only
 

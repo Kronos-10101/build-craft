@@ -130,6 +130,7 @@ function templateEchoSet() {
     for (const line of t.split('\n')) {
       if (/^#{1,6}\s/.test(line.trim())) continue;
       const n = normalizeLine(line);
+      // 15 chars: below this, normalized lines are generic fragments any doc shares; above it, a match fingerprints copied template text.
       if (n.length > 15) ECHO_SET.add(n);
     }
   }
@@ -142,6 +143,7 @@ function isTemplateEcho(line) {
   if (/^\(plan updated:/i.test(t)) return false;
   if (/^#{1,6}\s/.test(t)) return false;
   const n = normalizeLine(line);
+  // Same 15-char floor as templateEchoSet(): shorter matches are coincidence, not template reuse.
   return n.length > 15 && templateEchoSet().has(n);
 }
 
@@ -165,6 +167,7 @@ function substantiveDoneWhen(line) {
   if (!/done when/i.test(line)) return false;
   if (EXAMPLE_RE.test(line) || PLACEHOLDER_RE.test(line) || isTemplateEcho(line)) return false;
   const cond = (line.split(/done when/i)[1] || '').replace(/[`*_]/g, '').trim();
+  // >= 20 chars: tautologies ("it works", "done") fit in under 20; a checkable condition does not.
   return cond.length >= 20;
 }
 
@@ -182,7 +185,9 @@ function escRe(s) {
 /** Extract candidate file paths from text: backtick-quoted spans containing a
  *  slash or a dotted extension, plus bare slash-containing tokens and
  *  extension-bearing tokens. URLs are excluded first so "https://a/b" never
- *  counts as a path. Used to prove decisions.md connects to the plan. */
+ *  counts as a path. Used to prove decisions.md connects to the plan.
+ *  Extensions match at 1-6 chars: real suffixes (.md, .mjs, .json) fit, while
+ *  longer dotted tails are version strings or prose, not file paths. */
 function extractPaths(text) {
   const set = new Set();
   const noUrls = text.replace(/https?:\/\/\S+/g, ' ');
@@ -225,6 +230,9 @@ function decisionBlocks(text) {
   return idx.map((s, i) => text.slice(s, idx[i + 1] ?? text.length));
 }
 
+/** Detail strings quote offending lines truncated at 60 chars (fragments) or
+ *  120 chars (full lines): enough text to locate the problem in the source
+ *  file, short enough that a failing gate stays readable on one screen. */
 function check(name, ok, detail) {
   return { name, ok: !!ok, detail };
 }
@@ -239,14 +247,15 @@ function checksP1(dir) {
   const task = raw === null ? null : stripPlaceholders(raw);
   for (const h of P1_HEADERS) {
     const re = new RegExp(`^##\\s*${h.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`, 'im');
-    if (task === null) out.push(check(`p1:task.md header "## ${h}"`, false, 'file missing: task.md'));
-    else out.push(check(`p1:task.md header "## ${h}"`, re.test(task), re.test(task) ? 'present' : 'header not found'));
+    if (task === null) out.push(check(`p1:task.md header "## ${h}"`, false, 'file missing: task.md — run --init <dir> to scaffold it from templates/, then fill it in'));
+    else out.push(check(`p1:task.md header "## ${h}"`, re.test(task), re.test(task) ? 'present' : `header not found — add a line exactly "## ${h}" to task.md`));
   }
   const tasks = readQuiet(path.join(dir, 'tasks.md'));
   if (tasks === null) {
-    out.push(check('p1:tasks.md has "- [ ]" + "done when" line', false, 'file missing: tasks.md'));
+    out.push(check('p1:tasks.md has "- [ ]" + "done when" line', false, 'file missing: tasks.md — run --init <dir> to scaffold it from templates/, then replace the example tasks with real ones'));
   } else {
     const n = tasks.split('\n').filter((l) => /^\s*-\s*\[\s\]/.test(l) && substantiveDoneWhen(l)).length;
+    // >= 1 qualifying line: phase 1 is meaningless with zero real tasks, so one substantive checkbox is the floor.
     out.push(check(
       'p1:tasks.md has "- [ ]" + substantive "done when" line',
       n >= 1,
@@ -273,11 +282,12 @@ function checksP2(dir, skillRoot, withDesign) {
   const rawDec = readQuiet(path.join(dir, 'decisions.md'));
   const dec = rawDec === null ? null : stripPlaceholders(rawDec);
   if (dec === null) {
-    out.push(check('p2:decisions.md has >= 2 "## D<n>" entries', false, 'file missing: decisions.md'));
-    out.push(check('p2:decisions.md blocks have "options considered"+"why"+"sources"', false, 'file missing: decisions.md'));
-    out.push(check('p2:decisions.md URL also in references/*.md', false, 'file missing: decisions.md'));
+    out.push(check('p2:decisions.md has >= 2 "## D<n>" entries', false, 'file missing: decisions.md — run --init <dir> to scaffold it from templates/, then record the phase decisions'));
+    out.push(check('p2:decisions.md blocks have "options considered"+"why"+"sources"', false, 'file missing: decisions.md — run --init <dir> to scaffold it from templates/, then record the phase decisions'));
+    out.push(check('p2:decisions.md URL also in references/*.md', false, 'file missing: decisions.md — run --init <dir> to scaffold it from templates/, then record the phase decisions'));
   } else {
     const blocks = decisionBlocks(dec);
+    // >= 2 entries (checked next): one decision proves no alternatives were weighed; two is the smallest count that proves a choice happened.
     out.push(check('p2:decisions.md has >= 2 "## D<n>" entries', blocks.length >= 2, `found ${blocks.length} substantive, need >= 2`));
     if (blocks.length === 0) {
       out.push(check('p2:decisions.md blocks have "options considered"+"why"+"sources"', false, 'no substantive decision blocks found'));
@@ -309,6 +319,7 @@ function checksP2(dir, skillRoot, withDesign) {
       for (const b of blocks) {
         const num = (b.match(/^##\s*D(\d+)/im) || [])[1] ?? '?';
         const len = b.replace(/\s+/g, ' ').trim().length;
+        // 150 chars: options considered + why + sources cannot be stated honestly in less; below it the block is a stub.
         if (len < 150) thin.push(`D${num} (${len} chars, need >= 150)`);
       }
       out.push(check(
@@ -325,7 +336,7 @@ function checksP2(dir, skillRoot, withDesign) {
       const rawTaskX = readQuiet(path.join(dir, 'task.md'));
       const tx = rawTaskX === null ? null : stripPlaceholders(rawTaskX);
       if (tx === null) {
-        out.push(check('p2:decisions.md names a file path from task.md "## File changes"', false, 'file missing: task.md'));
+        out.push(check('p2:decisions.md names a file path from task.md "## File changes"', false, 'file missing: task.md — run --init <dir> to scaffold it from templates/, then fill it in'));
       } else {
         const fc = sectionAfter(tx, /^##\s*file changes\s*$/im, /^##\s/m);
         const planPaths = fc ? extractPaths(fc) : new Set();
@@ -346,13 +357,15 @@ function checksP2(dir, skillRoot, withDesign) {
   const rawGrill = readQuiet(path.join(dir, 'grill.md'));
   const grill = rawGrill === null ? null : stripPlaceholders(rawGrill);
   if (grill === null) {
-    out.push(check('p2:grill.md has >= 1 "## round" header and >= 3 "Q:" lines', false, 'file missing: grill.md'));
+    out.push(check('p2:grill.md has >= 1 "## round" header and >= 3 "Q:" lines', false, 'file missing: grill.md — run --init <dir> to scaffold it from templates/, then run the grill in it'));
   } else {
     const rounds = (grill.match(/^##\s*round/gim) || []).length;
     const qLines = grill.split('\n').filter((l) => /^\s*Q:\s*\S/.test(l));
     const aLines = grill.split('\n').filter((l) => /^\s*A:\s*\S/.test(l));
+    // 30 chars: a real Q or A names a subject and a stake; rubber stamps ("looks good?", "yes") fit in ~10, so 30 forces specifics.
     const shortQ = qLines.filter((l) => l.replace(/^\s*Q:\s*/, '').trim().length < 30);
     const shortA = aLines.filter((l) => l.replace(/^\s*A:\s*/, '').trim().length < 30);
+    // >= 1 round, >= 3 questions: one round is the minimum recorded interrogation, and three questions is the smallest set covering goal, constraints, and failure modes.
     const ok = rounds >= 1 && qLines.length >= 3 && shortQ.length === 0
       && aLines.length >= qLines.length && shortA.length === 0;
     const bits = [
@@ -371,7 +384,7 @@ function checksP2(dir, skillRoot, withDesign) {
   out.push(check(
     'p2:grill.md has explicit stop predicate "(plan updated: yes/no)"',
     grill !== null && stopLines.length >= 1,
-    grill === null ? 'file missing: grill.md' : (stopLines.length >= 1 ? `found ${stopLines.length}` : 'no "(plan updated: yes/no)" line — the stop condition must be recorded, not self-judged'),
+    grill === null ? 'file missing: grill.md — run --init <dir> to scaffold it from templates/, then run the grill in it' : (stopLines.length >= 1 ? `found ${stopLines.length}` : 'no "(plan updated: yes/no)" line — the stop condition must be recorded, not self-judged'),
   ));
 
   // Rubric-anchored critique: the ## Rubric section must survive in grill.md so
@@ -386,22 +399,24 @@ function checksP2(dir, skillRoot, withDesign) {
   // Separate judge pass: after the rounds, a distinct verdict step (not the same
   // breath as the answers) — the structural fix for rationalized self-review.
   const verdicts = grill === null ? [] : grill.split('\n').filter((l) => /^\s*verdict:/i.test(l));
+  // >= 2 verdicts of >= 20 chars: one verdict is self-review, and under 20 chars only "ok"/"fine" fit — neither is a judged ruling.
   const shortV = verdicts.filter((l) => l.replace(/^\s*verdict:\s*/i, '').trim().length < 20);
   const vok = verdicts.length >= 2 && shortV.length === 0;
   let vdetail = `found ${verdicts.length} (need >= 2, each >= 20 chars)`;
   if (shortV.length) vdetail += `; too short: ${shortV.map((l) => `"${l.trim().slice(0, 60)}"`).join('; ')}`;
-  out.push(check('p2:grill.md "## Judge pass" has >= 2 substantive "Verdict:" lines', grill !== null && vok, grill === null ? 'file missing: grill.md' : vdetail));
+  out.push(check('p2:grill.md "## Judge pass" has >= 2 substantive "Verdict:" lines', grill !== null && vok, grill === null ? 'file missing: grill.md — run --init <dir> to scaffold it from templates/, then run the grill in it' : vdetail));
 
   const rawTask = readQuiet(path.join(dir, 'task.md'));
   const task = rawTask === null ? null : stripPlaceholders(rawTask);
   if (task === null) {
-    out.push(check('p2:task.md "## Failure modes" has >= 3 bullets', false, 'file missing: task.md'));
+    out.push(check('p2:task.md "## Failure modes" has >= 3 bullets', false, 'file missing: task.md — run --init <dir> to scaffold it from templates/, then fill it in'));
   } else {
     const sec = sectionAfter(task, /^##\s*failure modes\s*$/im, /^##\s/m);
     if (sec === null) {
-      out.push(check('p2:task.md "## Failure modes" has >= 3 bullets', false, '"## Failure modes" section not found in task.md'));
+      out.push(check('p2:task.md "## Failure modes" has >= 3 bullets', false, '"## Failure modes" section not found in task.md — add the section and list at least three substantive failure-mode bullets'));
     } else {
       const bullets = sec.split('\n').filter((l) => /^\s*[-*]\s*\S/.test(l));
+      // >= 3 bullets of >= 20 chars: fewer than three means the happy path was never stress-tested, and 20 chars forces a named failure instead of "it breaks".
       const short = bullets.filter((l) => l.replace(/^\s*[-*]\s*/, '').trim().length < 20);
       const ok = bullets.length >= 3 && short.length === 0;
       let detail = `found ${bullets.length} (need >= 3)`;
@@ -414,13 +429,14 @@ function checksP2(dir, skillRoot, withDesign) {
     const rawDesign = readQuiet(path.join(dir, 'design.md'));
     const design = rawDesign === null ? null : stripPlaceholders(rawDesign);
     if (design === null) {
-      out.push(check('p2:design.md has >= 2 "### direction" sections', false, 'file missing: design.md'));
-      out.push(check('p2:design.md has a "## decision" line', false, 'file missing: design.md'));
+      out.push(check('p2:design.md has >= 2 "### direction" sections', false, 'file missing: design.md — create it from templates/design.md (this check runs only with --design)'));
+      out.push(check('p2:design.md has a "## decision" line', false, 'file missing: design.md — create it from templates/design.md (this check runs only with --design)'));
     } else {
+      // >= 2 directions: a single direction is a default, not a design decision; two proves alternatives were actually compared.
       const dirs = (design.match(/^###\s*direction/gim) || []).length;
       const decLine = /^##\s*decision/im.test(design);
       out.push(check('p2:design.md has >= 2 substantive "### direction" sections', dirs >= 2, `found ${dirs}, need >= 2`));
-      out.push(check('p2:design.md has a substantive "## decision" line', decLine, decLine ? 'present' : 'not found'));
+      out.push(check('p2:design.md has a substantive "## decision" line', decLine, decLine ? 'present' : 'not found — add a "## decision" section naming the chosen direction'));
     }
   }
   return out;
@@ -429,7 +445,7 @@ function checksP2(dir, skillRoot, withDesign) {
 function checksP3(dir) {
   const tasks = readQuiet(path.join(dir, 'tasks.md'));
   if (tasks === null) {
-    return [check('p3:every checkbox line has a substantive "done when"', false, 'file missing: tasks.md')];
+    return [check('p3:every checkbox line has a substantive "done when"', false, 'file missing: tasks.md — run --init <dir> to scaffold it from templates/, then replace the example tasks with real ones')];
   }
   const lines = stripPlaceholders(tasks).split('\n');
   const boxes = lines.filter((line) => /^\s*-\s*\[[ xX]\]/.test(line));
@@ -453,17 +469,18 @@ function checksP4(dir, strict, checklistFiles, skillRoot) {
   const raw = readQuiet(path.join(dir, 'report.md'));
   const report = raw === null ? null : stripPlaceholders(raw);
   if (report === null) {
-    out.push(check('p4:report.md "## Verification" has a pass verdict', false, 'file missing: report.md'));
+    out.push(check('p4:report.md "## Verification" has a pass verdict', false, 'file missing: report.md — run --init <dir> to scaffold it from templates/, then write the report'));
   } else {
+    // >= 1 pass verdict line inside the section (checked below): an empty or verdict-free Verification section is not evidence the work was checked.
     const sec = sectionAfter(report, /^##\s*verification\s*$/im, /^##\s/m);
     if (sec === null) {
-      out.push(check('p4:report.md "## Verification" has a pass verdict', false, '"## Verification" section not found in report.md'));
+      out.push(check('p4:report.md "## Verification" has a pass verdict', false, '"## Verification" section not found in report.md — add the section and record an explicit pass verdict line in it'));
     } else {
       const verdicts = sec.split('\n').filter((l) => /pass/i.test(l) || /\[x\]/i.test(l));
       out.push(check(
         'p4:report.md "## Verification" has a pass verdict',
         verdicts.length >= 1,
-        verdicts.length >= 1 ? `verdict line(s): ${verdicts.length}` : 'no line matching /pass/i or /[x]/i in the section',
+        verdicts.length >= 1 ? `verdict line(s): ${verdicts.length}` : 'no line matching /pass/i or /[x]/i in the section — add an explicit verdict line such as "result: pass" or a checked [x] item',
       ));
     }
   }
@@ -503,7 +520,7 @@ function checksP4(dir, strict, checklistFiles, skillRoot) {
   }
   if (strict) {
     if (report === null) {
-      out.push(check('p4 --strict:no unnegated "fail" line', false, 'file missing: report.md'));
+      out.push(check('p4 --strict:no unnegated "fail" line', false, 'file missing: report.md — run --init <dir> to scaffold it from templates/, then write the report'));
     } else {
       const bad = report.split('\n').filter((l) => /\bfail/i.test(l) && !/\bno\b.*\bfail/i.test(l));
       out.push(check(
@@ -525,14 +542,14 @@ function checksCritical(dir, skillRoot) {
   const name = 'p4 --critical:report.md "## Critical-path" attests every MUST item';
   const cp = readQuiet(path.join(skillRoot, 'references', 'critical-path.md'));
   if (cp === null) {
-    out.push(check(name, false, 'references/critical-path.md not found under skill root'));
+    out.push(check(name, false, 'references/critical-path.md not found under skill root — check that --skill-root points at the build-craft skill directory'));
     return out;
   }
   const items = cp.split('\n').filter((l) => /^\s*-\s*\[[ xX]\]/.test(l)).length;
   const raw = readQuiet(path.join(dir, 'report.md'));
   const report = raw === null ? null : stripPlaceholders(raw);
   if (report === null) {
-    out.push(check(name, false, 'file missing: report.md'));
+    out.push(check(name, false, 'file missing: report.md — run --init <dir> to scaffold it from templates/, then write the report'));
     return out;
   }
   const sec = sectionAfter(report, /^##\s*critical-path\s*$/im, /^##\s/m);
@@ -542,6 +559,7 @@ function checksCritical(dir, skillRoot) {
   }
   const allReviewed = new RegExp(`all\\s+${items}\\s+reviewed`, 'i').test(sec);
   const waiverLines = sec.split('\n').filter((l) => /waiv/i.test(l));
+  // 30 chars: a waiver must name the risk being accepted; "n/a" / "skip" fit well under 30, a real reason does not.
   const shortWaivers = waiverLines.filter((l) => l.trim().length < 30);
   const noWaivers = /\bno\s+waivers\b/i.test(sec) && waiverLines.length === 0;
   const ok = allReviewed || noWaivers || (waiverLines.length >= 1 && shortWaivers.length === 0);
@@ -565,14 +583,14 @@ function runInit(targetDir, skillRoot) {
   let files;
   try { files = new Set(readdirSync(tplDir)); }
   catch {
-    console.error(`[warn] templates dir not found: ${tplDir}; nothing copied`);
+    console.error(`[warn] templates dir not found: ${tplDir}; nothing copied — check that --skill-root points at the build-craft skill directory`);
     console.log(`initialized dir (no templates copied): ${targetDir}`);
     return;
   }
   let copied = 0;
   for (const f of TEMPLATE_FILES) {
     if (!files.has(f)) {
-      console.error(`[warn] template missing: ${path.join(tplDir, f)} (skipped)`);
+      console.error(`[warn] template missing: ${path.join(tplDir, f)} (skipped — restore it in the skill templates directory)`);
       continue;
     }
     copyFileSync(path.join(tplDir, f), path.join(targetDir, f));
@@ -601,7 +619,7 @@ function main() {
     process.exit(2);
   }
   if (!args.dir) {
-    console.error('--phase requires --dir <dir>');
+    console.error('--phase requires --dir <dir> — pass the directory holding the phase files, e.g. --phase p1 --dir ./run');
     process.exit(2);
   }
 

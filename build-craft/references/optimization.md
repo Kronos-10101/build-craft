@@ -2,6 +2,21 @@
 
 Stack-general performance playbook: measure before changing, optimize algorithms before micro-tuning, cache deliberately, gate releases on numbers. Language internals are delegated: Python (GIL, runtimes, profiling ladder) → `references/python-internals.md`; C++ (cache layout, SIMD, allocation-free paths) → `references/cpp-modern.md`; schema/index depth → `references/databases.md`. Checked 2026-09-30.
 
+## Contents
+
+- Profile-first discipline
+- Algorithmic review (Big-O first)
+- Caching strategy
+- Edge delivery, CDN & transport
+- Database query optimization (operational loop)
+- Concurrency & connection pooling
+- Frontend budgets & Core Web Vitals
+- Load & stress testing
+- Measurable targets & CI regression gates
+- Perf verdict discipline — keep, revert, or it did not happen
+- Experiment and benchmark design
+- Sources
+
 ## Profile-first discipline
 
 - [ ] **Numeric baseline recorded before any change**: p50/p95/p99 latency, throughput, CPU%, memory, GC time — "it feels faster" is not evidence.

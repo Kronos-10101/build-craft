@@ -2,6 +2,21 @@
 
 Covers the C23 standard, compiler warnings, sanitizers, static analysis, CERT C / MISRA memory safety, toolchain hardening, CMake, testing, fuzzing, and style. Checked 2026-09-30.
 
+## Contents
+
+- Language standard: C23
+- Compiler warnings
+- Sanitizers
+- Auto-vectorization (SIMD)
+- Static analysis
+- CERT C / MISRA / memory safety
+- Toolchain hardening flags
+- Build system (CMake)
+- Testing
+- Fuzzing
+- Style
+- Sources
+
 ## Language standard: C23
 
 - [ ] C23 (ISO/IEC 9899:2024, published 2024-10-31, `__STDC_VERSION__ == 202311L`) is the baseline for new code; GCC 15 defaults to `gnu23`, Clang accepts `-std=c23` (partial support).

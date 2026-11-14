@@ -2,6 +2,33 @@
 
 Scope: the full testing discipline that ships reliable software — suite shape (pyramid, trophy, Google test sizes), unit/integration/contract/E2E, consumer-driven contracts with Pact, API testing, property-based, mutation, fuzzing, snapshot/visual, load/stress/soak, chaos engineering, TDD/BDD with enforcement and test-quality rules, systematic debugging, port/migration verification, comparison and equivalence claims, test doubles, test data management, shift-left, ephemeral environments, flaky-test discipline, coverage, and CI strategy (checked 2026-09-30). Checked 2026-09-30.
 
+## Contents
+
+- Suite shape — pyramid, trophy, and Google test sizes
+- Unit vs integration vs contract vs E2E
+- Consumer-driven contract testing with Pact
+- API testing
+- Property-based testing
+- Mutation testing
+- Fuzzing
+- Pairwise and combinatorial testing
+- Snapshot and visual regression testing
+- Load, stress, and soak testing
+- Chaos engineering and resilience testing
+- TDD and BDD done properly
+- Name the break — independent expectations, no mirrors
+- Test doubles — mocks, stubs, fakes, spies, dummies
+- Test data management
+- Shift-left: static analysis and pre-commit gates
+- Test environments
+- Flaky-test discipline
+- Debugging as a gated method
+- Coverage as a signal, not a target
+- CI test strategy
+- Port and migration verification
+- Comparison claims — equivalence and pre-set criteria
+- Sources
+
 ## Suite shape — pyramid, trophy, and Google test sizes
 
 - [ ] You can state the three models and when each wins: the pyramid (Cohn/Fowler — many fast unit, fewer integration, few E2E) optimizes for speed and fault localization; the testing trophy (Kent C. Dodds — static analysis at the base, integration as the widest layer, some unit, few E2E) optimizes for confidence per test because most real bugs live in the wiring; Google's small/medium/large sizes (one process / one machine / anything touching the network) classify by resource boundary, which is what actually determines speed and determinism.

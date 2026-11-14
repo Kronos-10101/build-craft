@@ -119,6 +119,7 @@ const RULES = [
     category: 'Security & Secrets',
     severity: 'BLOCKER',
     name: 'Hardcoded API Key / Secret Token',
+    // Token lengths in the regex below are the providers' real formats (Stripe sk_live_ + 24 chars, GitHub ghp_ + 36, Google AIzaSy + 33, Slack xox + 10-48, AWS AKIA + 16): matching real lengths keeps false positives near zero.
     regex: /(?:sk_live_[0-9a-zA-Z]{24,}|ghp_[0-9a-zA-Z]{36}|AIzaSy[0-9A-Za-z-_]{33}|xox[baprs]-[0-9a-zA-Z]{10,48}|AKIA[0-9A-Z]{16}|-----BEGIN PRIVATE KEY-----)/,
     remediation: 'Move secret into environment variables (.env.local) and reference via process.env.'
   },
@@ -151,6 +152,7 @@ const RULES = [
     remediation: 'Return a generic user-safe error message. Log the real stack trace server-side.'
   },
   {
+    // bcrypt cost >= 12 in the remediation below: the OWASP-recommended minimum work factor for password hashing.
     id: 'SEC-005',
     category: 'Security & Secrets',
     severity: 'BLOCKER',
@@ -173,6 +175,7 @@ const RULES = [
   // 2. BACKEND & RESILIENCE
   // ====================================================================
   {
+    // take/limit 20 in the remediation below: one screen of results is the largest page a list endpoint should return by default.
     id: 'RES-001',
     category: 'Backend & Resilience',
     severity: 'WARNING',
@@ -195,6 +198,7 @@ const RULES = [
     remediation: 'Select only required columns and ensure WHERE conditions run against indexed columns with a LIMIT clause.'
   },
   {
+    // 8000 ms in the remediation below: long enough for a slow API, short enough that a hung request frees the worker before users start retrying.
     id: 'RES-003',
     category: 'Backend & Resilience',
     severity: 'WARNING',
@@ -245,6 +249,7 @@ const RULES = [
     remediation: 'Pass `{ idempotencyKey: ... }` to payment mutations to guarantee exactly-once charging on network retries.'
   },
   {
+    // 5 MB in the remediation below: covers photos and documents users legitimately upload while staying far below disk/memory exhaustion territory.
     id: 'RES-008',
     category: 'Backend & Resilience',
     severity: 'NOTICE',
@@ -278,6 +283,7 @@ const RULES = [
     remediation: 'Anti-Slop Standard: Eliminate decorative colored icon boxes on card headers. Replace with refined typography, tabular mono metrics, or subtle hairline tags.'
   },
   {
+    // 6px in the remediation below: large enough to read at a glance, small enough to signal status rather than decoration.
     id: 'CRAFT-002',
     category: 'Design & Craft Anti-Slop',
     severity: 'WARNING',
@@ -294,6 +300,7 @@ const RULES = [
     remediation: 'Replace generic AI marketing filler with specific, tangible value propositions and concrete metrics.'
   },
   {
+    // The three figures in the regex below are the exact round counts template marketing copy reuses; genuine customer counts are rarely this round.
     id: 'CRAFT-004',
     category: 'Design & Craft Anti-Slop',
     severity: 'WARNING',
@@ -336,6 +343,7 @@ const RULES = [
       if (line.includes('hover:rotate-')) animCount++;
       if (line.includes('hover:shadow-')) animCount++;
       if (line.includes('hover:animate-')) animCount++;
+      // >= 3 stacked hover effects: one or two can be deliberate emphasis; three or more is the recognized builder-template tell.
       return animCount >= 3;
     },
     remediation: 'Restraint Rule: Do not stack multiple heavy hover effects. Use a single subtle translation (e.g. `hover:-translate-y-0.5`).'
@@ -562,6 +570,7 @@ const RULES = [
     category: 'Performance & SEO',
     severity: 'NOTICE',
     name: 'Hardcoded Copyright Year',
+    // Years 2010-2025 in the regex below: the span of plausible hardcoded copyright years when this rule was written; any fixed year in it goes stale, so flag it and make the year dynamic.
     regex: /©\s*(?:202[0-5]|201[0-9])\b/,
     remediation: 'Make copyright year dynamic: `{new Date().getFullYear()}` so it never falls out of date.'
   }
@@ -672,6 +681,7 @@ function scanFile(filePath) {
           name: rule.name,
           file: relPath,
           line: lineNum,
+          // 140 chars: enough of the offending line to identify it in an editor, short enough to keep one finding to a few terminal lines.
           snippet: line.trim().slice(0, 140),
           remediation: rule.remediation
         };
@@ -717,6 +727,7 @@ function traverse(dir) {
 traverse(targetDir);
 
 // Calculate readiness score
+// Scoring weights: a blocker costs 15 (about seven blockers zero the score, matching its "do not ship" meaning), a warning 4, a notice 1 — so polish issues alone can never outweigh a single blocker.
 const rawScore = 100 - (findings.blockers.length * 15) - (findings.warnings.length * 4) - (findings.notices.length * 1);
 const readinessScore = Math.max(0, Math.min(100, rawScore));
 
@@ -760,6 +771,7 @@ console.log(`${colors.bold}═════════════════�
 let scoreBadge = colors.bgGreen;
 let grade = 'A+ GOLD STANDARD - PRODUCTION READY';
 
+// Grade bands: <60 F (blocker territory), 60-74 C, 75-87 B, 88-94 A, >=95 A+ — bands narrow near the top because the last points are the hardest to earn.
 if (readinessScore < 60) {
   scoreBadge = colors.bgRed;
   grade = 'F - CRITICAL BLOCKERS DETECTED';
@@ -782,6 +794,7 @@ console.log(`  ${colors.dim}│${colors.reset} ${colors.bold}Category${colors.re
 console.log(`  ${colors.dim}├─────────────────────────────┼──────────┼──────────┼──────────┤${colors.reset}`);
 
 for (const [cat, counts] of Object.entries(categoryCounts)) {
+  // Column widths 27 (category) and 8 (counts) match the summary grid borders printed above; changing one without the other breaks the table alignment.
   const padCat = cat.padEnd(27, ' ');
   const b = String(counts.blockers).padStart(8, ' ');
   const w = String(counts.warnings).padStart(8, ' ');

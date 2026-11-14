@@ -2,6 +2,29 @@
 
 Covers how a repository is organized and governed: folder layouts per ecosystem, naming, monorepo rules, branching strategy, branch protection, Conventional Commits, PR discipline, env config and the secret ladder, lockfile hygiene, changelogs and release automation, READMEs, and editorconfig. How the build/dev *environment* is created is covered by `build-environments.md` — this file is about the repo itself. Checked 2026-09-30.
 
+## Contents
+
+- Picking the layout
+- Python layout
+- Node / TypeScript layout
+- Go layout
+- Rust / Cargo layout
+- C / C++ layout (Pitchfork)
+- Naming
+- Branching strategy — trunk-based vs GitFlow
+- Branch protection & CODEOWNERS (GitHub)
+- Commit messages (Conventional Commits)
+- PR discipline
+- Worktrees & finishing a branch
+- Environment config & the secret ladder
+- Lockfiles (repo hygiene slice)
+- Changelogs & release automation
+- ADRs & documentation drift
+- READMEs that actually help
+- editorconfig & repo hygiene files
+- Deployment parity, migrations & ops
+- Sources
+
 ## Picking the layout
 
 - [ ] Single package per repo is the default: one `src/`, one test tree, one manifest, one deployable/consumable — stay here until sharing forces otherwise.

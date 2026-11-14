@@ -2,6 +2,20 @@
 
 Concrete pass/fail rules for the TypeScript language and its toolchain: compiler strictness, type discipline, lint/format, runtime validation, modules/packages, unit testing, dependency supply chain. Checked 2026-09-30. (React/Next.js framework patterns live in `react-nextjs.md`; browser HTML/a11y mechanics in `web-frontend.md`.)
 
+## Contents
+
+- Compiler version and tsconfig strictness
+- Type discipline — no `any`
+- Type-check performance at scale
+- Lint and format
+- Runtime validation at trust boundaries
+- Modules, packages, and runtime
+- Dates and times — Temporal, not `Date`
+- Testing
+- Dependencies and supply chain
+- Audit recipe
+- Sources
+
 ## Compiler version and tsconfig strictness
 
 - [ ] `typescript` pinned to a current major: `^6.0.x` (stable Mar 2026, last JS-codebase release) or `7.x` (Go-native, GA Jul 2026); nothing below 5.9.3, nothing unpinned at `latest`.
@@ -38,6 +52,8 @@ Concrete pass/fail rules for the TypeScript language and its toolchain: compiler
 - [ ] Typecheck time is a timed CI step and a 2×+ slowdown triggers investigation, not a shrug.
 
 ## Lint and format
+
+Default: ESLint (flat config) with typescript-eslint — Biome and oxlint appear below only as conditional alternatives.
 
 - [ ] ESLint uses flat config (`eslint.config.*` present; zero `.eslintrc.*` files — ESLint 10, Feb 2026, removed legacy config).
 - [ ] `typescript-eslint` v8.58+ configured with type-aware rules (`projectService: true`); `@typescript-eslint/no-explicit-any` and `@typescript-eslint/no-floating-promises` enabled.

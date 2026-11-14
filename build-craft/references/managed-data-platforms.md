@@ -2,6 +2,22 @@
 
 How to pick and operate a managed Postgres/MySQL/SQLite platform without surprise bills, cold-start surprises, or lock-in. Prices and tiers are approximate, checked 2026-09-30 — re-verify before quoting. Checked 2026-09-30.
 
+## Contents
+
+- Decide the engine and shape first
+- The platforms — 2026 snapshot
+- Choose X when…
+- Connection pooling — non-negotiable on serverless
+- Branching for dev and preview
+- Ephemeral branches for migration rehearsal
+- Backups and PITR
+- Connection strings per platform
+- Cost heuristics
+- Red flags before committing
+- When to self-host Postgres
+- Migration path off the platform
+- Sources
+
 ## Decide the engine and shape first
 
 - [ ] You chose Postgres, MySQL, or SQLite deliberately: Postgres for the extension ecosystem (pgvector, PostGIS, pg_cron) and JSON support; MySQL only when the app or team is already MySQL-native; SQLite for single-writer edge/local workloads, not write-heavy OLTP.

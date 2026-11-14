@@ -2,6 +2,23 @@
 
 Covers data modeling and types, normalization, indexing (strategy + type matrix), EXPLAIN discipline, migrations, transactions and isolation, N+1 detection, connection pooling, backups/PITR, replication, Postgres 17/18/19 features, and maintenance. Managed-platform comparison lives in `managed-data-platforms.md`. Checked 2026-09-30.
 
+## Contents
+
+- Data modeling & types
+- Normalization vs denormalization
+- Indexing strategy
+- Index type matrix
+- EXPLAIN discipline & query analysis
+- Migrations discipline
+- Transactions & isolation
+- N+1 query detection
+- Connection pooling
+- Backups & PITR
+- Replication
+- Postgres versions (checked 2026-09-30)
+- Maintenance & health
+- Sources
+
 ## Data modeling & types
 
 - [ ] Identifiers use `uuid` (prefer `uuidv7()` as the default on PG 18+ — time-ordered, good B-tree locality, unlike random UUIDv4 which fragments indexes); never `varchar` for IDs.

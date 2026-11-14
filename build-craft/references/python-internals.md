@@ -2,6 +2,24 @@
 
 How CPython actually executes code — eval loop, specialization, the GIL, free threading, the JIT, subinterpreters, GC — and the disciplined order for making it faster. Complements `references/python.md` (style/tooling). Checked 2026-09-30.
 
+## Contents
+
+- The eval loop & specialization (PEP 659)
+- The GIL: what it blocks
+- Free-threaded Python (PEP 779)
+- The JIT (PEP 744, copy-and-patch)
+- Subinterpreters (PEP 734)
+- GC & allocators
+- sys.monitoring (PEP 669)
+- Profile before optimizing
+- Algorithmic wins first
+- Faster runtimes & native extensions
+- Concurrency model choice
+- Zero-copy & serialization
+- Micro-optimizations (only after profiling)
+- Startup & import time
+- Sources
+
 ## The eval loop & specialization (PEP 659)
 
 - [ ] You can name the pipeline: source → AST → bytecode (`dis.dis(f)`) → the CPython eval loop executing one adaptive instruction at a time.

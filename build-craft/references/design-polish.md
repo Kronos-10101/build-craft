@@ -2,6 +2,24 @@
 
 Scope: the verifiable craft system behind refined interfaces — typography, spacing, color, motion, loading/empty/error states, design tokens. To not look AI-generated, see `design-distinct.md`; for semantic HTML and WCAG mechanics, see `web-frontend.md`. Checked 2026-10-01.
 
+## Contents
+
+- Typography
+- Content formatting & text quality
+- Data tables & pagination
+- Footer & navigation hygiene
+- Spacing & layout
+- Color system (OKLCH-first)
+- Dark mode craft
+- Micro-interactions & motion (2026)
+- Modern CSS capabilities (2026 platform)
+- Loading states
+- Empty / error states
+- Visual hierarchy
+- Design tokens (W3C DTCG)
+- Curated design resources
+- Sources
+
 ## Typography
 
 - [ ] Sizes from a documented **modular scale** (1.2 dense dashboards, 1.25–1.333 marketing, 1.5–1.618 editorial) — grep the stylesheet for ad-hoc values outside the scale.
