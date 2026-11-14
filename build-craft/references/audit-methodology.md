@@ -53,6 +53,23 @@ For diff-based reviews, check in this priority order — design first, style las
 - [ ] **Naming / comments / docs** — names clear without opening the implementation; comments explain why, not what.
 - [ ] **Style / consistency** — matches the codebase's conventions; personal taste is `Nit:` only, never blocking; pre-existing debt gets a separate ticket, never blocks this change.
 
+## Review craft: comment labels, sizing, and remedies
+
+Producing the review itself: how comments are labelled, how big a change may be before it is unreviewable, and what a structural comment must offer. Distinct from the finding severity table below, which grades the defect; these labels grade the comment.
+
+- [ ] **Comment severity prefixes, on every comment:** unmarked means a required change that must be addressed before merge; `Critical:` blocks merge (security, data loss, broken function); `Nit:` is minor and optional, safe to ignore; `Optional:` / `Consider:` is a suggestion worth weighing, not a requirement; `FYI` is information only, no action needed.
+- [ ] Unlabelled feedback reads as all-mandatory: authors waste hours on optional points, or discount required ones as taste. If everything in a review carries the same weight, the review has failed to triage itself.
+- [ ] **Change sizing, changed lines:** ~100 lines is good and reviewable in one sitting; ~300 is acceptable when it is a single logical change; ~1000 is too large, split it (stack, by file group, horizontal stubs first, or vertical slices).
+- [ ] **Total file size is a separate signal:** ~1000 lines in one file is a finding in its own right, even when the diff is small. A change that materially grows an already-large file triggers the question first: extract helpers, subcomponents, or modules before adding more.
+- [ ] Large changes stay acceptable only where the reviewer verifies intent rather than every line: complete file deletions, automated refactoring. Refactoring and feature work are two changes; submit them separately.
+- [ ] **Verify tests by experiment, not by reading:** invert one condition the change adds (drop a negation, swap `&&` for `||`), run the suite, then restore the file. A mutation that stays green is a finding, and the finding names the test case that is missing.
+- [ ] **Dependency-upgrade discipline:** one dependency per change; read the changelog, not the version number (semver is a promise the maintainer may not have kept; for a major bump, read the migration notes); green suite before AND after the bump; review the lockfile diff, not just the manifest, because one direct bump can pull in dozens of transitive changes; never hand-edit the lockfile.
+- [ ] A bulk "bump deps" change is unreviewable by construction: when it breaks, no one can name which package did it, and the revert is no longer clean.
+- [ ] **Name the structural remedy, not just the problem:** replace a chain of conditionals with a typed model or an explicit dispatcher; collapse duplicate branches into one flow; separate orchestration from business logic; move feature-specific logic out of a shared module into its owning package; reuse the canonical helper instead of a near-duplicate; make a type boundary explicit so downstream branching disappears; delete a pass-through wrapper that adds indirection without clarifying the API; extract a helper or split a large file into focused modules.
+- [ ] Prefer the remedy that removes moving pieces. A refactor that leaves the reader holding the same number of concepts has relocated complexity, not reduced it.
+- [ ] **Presumptive blockers:** surface each of these and propose the simpler design; escalate to a required change only when the change actively makes structure worse: a refactor that relocates complexity instead of reducing it; a change that pushes a file past the size boundary with no decomposition; feature logic added to a shared module; a near-duplicate of an existing canonical helper; a silent fallback that hides an unclear invariant.
+- [ ] **Dead code is listed and asked about, never silently deleted:** after a refactor, enumerate the orphaned functions, components, and constants explicitly, with the replacement named for each, then ask whether to remove them. Unreferenced is evidence, not proof: dynamic calls, reflection, and external consumers do not show up in a grep.
+
 ## Structural audit dimensions (AI-generated code)
 
 For AI-assisted codebases, run a structural pass across these seven dimensions — each names where it is audited above, so no dimension is assumed covered just because it was generated alongside the others:
@@ -120,9 +137,27 @@ Then: scope/metadata, executive summary (posture paragraph, top 3–5 risks, sev
 - [ ] New dated audit written as a sibling file; prior audits untouched (the diff tells the story).
 - [ ] Tracker lifecycle: Discovered → Triaged → Assigned → Remediated → Verified → Closed. Residual risk statement covers deferred/accepted findings with compensating controls and re-evaluation triggers.
 
+## Receiving code review
+
+The other seat: feedback arrives as input to verify, not as orders to execute. Technical correctness outranks social comfort, and agreement is shown by the fix, not by praise.
+
+- [ ] **The protocol, in order:** READ the complete feedback without reacting; UNDERSTAND by restating the requirement in your own words, or asking; VERIFY each item against the codebase as it actually is; EVALUATE whether it is technically sound for this codebase; RESPOND with a technical acknowledgment or a reasoned pushback; IMPLEMENT one item at a time.
+- [ ] **One unclear item stops everything:** if ANY item is unclear, clarify before implementing ANY of them. Items may be related, and a fix for one can pre-empt or contradict another; partial implementation built on partial understanding is the failure mode this rule exists to prevent.
+- [ ] Stating the split is the correct move: name the items understood, name the items unclear, ask about those. Implementing the clear subset first and asking later is the wrong order.
+- [ ] **External suggestions pass a five-point check before any code moves:** (1) technically correct for THIS codebase? (2) breaks existing behaviour? (3) why does the current implementation exist, and does that reason still hold (legacy target, compatibility, a deliberate trade-off)? (4) valid on all platforms and versions this code supports? (5) does the reviewer have the full context, or only the diff?
+- [ ] If a suggestion cannot be verified locally, say so and name what verification would take. Proceeding anyway converts an unknown into a regression risk.
+- [ ] If a suggestion conflicts with a prior architectural decision on record, stop and surface the conflict instead of silently reversing the decision.
+- [ ] **Run the YAGNI check on any "implement it properly" suggestion:** grep the codebase for actual usage first. If nothing calls it, the legitimate response is pushback: propose removing the unused surface instead of building the full version. If it is used, implement it properly.
+- [ ] Pushback is legitimate, and expected, when a suggestion breaks working behaviour, rests on missing context, gold-plates an unused feature, is wrong for this stack, or overrides a recorded decision. Push back with technical reasoning, specific questions, and references to working code or tests; never with defensiveness.
+- [ ] **Implementation order:** blocking issues first (breakage, security), then simple fixes (typos, imports, renames), then complex fixes (refactoring, logic). Test each fix individually as it lands, then verify no regressions across the set.
+- [ ] **Acknowledgment is technical; performative agreement is banned:** no "You're absolutely right!", no "Great point!", no gratitude theatre, no announcing implementation before verification. State the fix instead: what changed, and where. The code shows the feedback was heard.
+- [ ] Correcting your own pushback follows the same rule: state factually what was checked and what it showed, then implement. No long apology, no defending the earlier call.
+
 ## Sources
 
 - https://cheatsheetseries.owasp.org/cheatsheets/Secure_Code_Review_Cheat_Sheet.html
 - https://github.com/datatalksclub/ai-dev-tools-zoomcamp/blob/HEAD/research/module4-tool-agnostic-curriculum/wiki/sources/owasp-secure-code-review.md
 - https://github.com/0-draft/dev.to/blob/HEAD/articles/google-code-review-practices.md
 - https://github.com/abhishekthakur7/software-factory/blob/HEAD/docs/research/raw/R6-human-review.md
+- obra/superpowers (MIT) — receiving-code-review, requesting-code-review, subagent-driven-development: https://github.com/obra/superpowers
+- addyosmani/agent-skills (MIT) — code-review-and-quality: https://github.com/addyosmani/agent-skills

@@ -85,6 +85,21 @@ Covers style, typing, environments, packaging, errors, logging, testing, HTTP/as
 - [ ] `set`/`dict` for membership tests, comprehensions over append-loops, generators for large data, `lru_cache` (with `maxsize`) for repeated pure calls, `"".join()` for string building.
 - [ ] Hot loops pushed into C (NumPy/pandas vector ops, never Python `for` over rows); async code never blocks the event loop.
 
+## Data work — leakage, missingness, honest summaries
+
+- [ ] Split before you fit: partition by subject, group, or time (whichever matches how the model will be used) **before** fitting imputers, scalers, encoders, feature selection, or any other learned transform. Fit learned parameters on the training partition only, then apply them frozen to the rest.
+- [ ] Four kinds of empty stay distinct: missing, structurally absent, below detection (non-detect), and true zero. Never auto-impute across those categories; each gets its own handling, recorded in the analysis notes.
+- [ ] An outlier flag is not a deletion rule: report mean/SD beside median/IQR/MAD, show how much the headline result moves with the flagged points in and out, and delete only for a documented measurement error.
+- [ ] Raw data is read-only: derived tables and figures are written to separate artifacts, every transformation is recorded, and results are reported on the raw scale (back-transformed), not on the transformed scale the model preferred.
+- [ ] A bounded prefix scan (first N rows, one file head) is not a sample: check row ordering by date, batch, and outcome before generalizing any profile statistic computed from a prefix.
+- [ ] Patterns found by looking at the data are labeled exploratory. The hypothesis family for confirmatory tests is written down before those tests run; a post-hoc pattern joins the next study, not this one's conclusions.
+
+## Numeric pitfalls
+
+- [ ] `scipy.optimize.curve_fit` with real measurement uncertainties needs `absolute_sigma=True`. The default rescales the parameter covariance by the reduced chi-square, so uncertainties come out silently wrong whenever the sigmas were honest.
+- [ ] `np.std` / `np.var` default to `ddof=0` (population), which understates sample spread. State `ddof` explicitly in analysis code (`ddof=1` for a sample estimate) so the choice is reviewed, not inherited.
+- [ ] Never strip a unit or scale silently: name it at extraction (`duration_ms`, `size_mib`) and convert at one named boundary. Most ms-vs-s and bytes-vs-MiB bugs are born at an unnamed extraction point.
+
 ## Audit recipe
 
 ```bash
@@ -107,3 +122,4 @@ grep -rnE "except:|print\(|pickle\.loads?|eval\(|exec\(|shell=True|verify=False|
 - https://docs.python.org/3/whatsnew/3.14.html
 - https://docs.python.org/3/whatsnew/3.13.html
 - https://packaging.python.org/
+- Data work and numeric pitfalls: K-Dense-AI scientific-agent-skills (MIT) — https://github.com/K-Dense-AI/scientific-agent-skills

@@ -91,7 +91,7 @@ Gate: `node scripts/craft-gate.mjs --phase p2 --dir <run-dir>` (`--design` for d
 ### P-3. Implement
 
 1. **Scaffold first**: set up the project structure per `references/project-structure.md` (src layout, `tests/`, `docs/`, `.env.example`, lockfile, CI) **before** writing feature code. Copy and adapt starter templates from `assets/templates/`.
-2. **Build to the checklist**: write the code, then self-review against each routed checklist. Fix every violated item, or record it as accepted risk with a one-line reason.
+2. **Build to the checklist**: write the code, then self-review against each routed checklist. Fix every violated item, or record it as accepted risk with a one-line reason. Work in slices: each slice runs implement → test → verify → commit, so every slice is independently revertable and the tree stays green between slices. Out-of-scope issues you notice are reported as "NOTICED BUT NOT TOUCHING", never fixed by drive-by. Never re-run a verification command on unchanged code.
 3. Check off `tasks.md` items and update `progress.md` as work lands.
 
 Gate: `node scripts/craft-gate.mjs --phase p3 --dir <run-dir>`. Do not proceed to the next phase until `node scripts/craft-gate.mjs --phase <pX> --dir <run-dir>` exits 0.
@@ -104,7 +104,7 @@ Gate: `node scripts/craft-gate.mjs --phase p3 --dir <run-dir>`. Do not proceed t
 - For web apps, also run `node scripts/readiness-audit.mjs <project-path> --ci` — the 46-rule production-readiness gate (security, resilience, anti-slop craft, ethical UI, formatting, a11y, perf/SEO). No critical blockers ship.
 - When the change includes user-facing prose (README/docs/report text), also run `node scripts/prose-scan.mjs <paths>` and fix every hard flag — or record it as accepted with a one-line reason, same discipline as any other P-4 check.
 - Debug before you fix: when a test, build, or audit check fails, investigate root cause before changing code — read the full output/trace, isolate the divergence point, form a single hypothesis, prove it with evidence, then fix. Never patch blind against a red suite.
-- Fill the verification section of `report.md`: what ran, what passed, what was waived and why. For routed checklists, add `## Checklist attestation` with one "`<name>`: `<p>` pass, `<w>` waived" line per checklist (p+w = that checklist's `- [ ]` item count) and gate with `--checklists <f1,f2>`.
+- Fill the verification section of `report.md`: what ran, what passed, what was waived and why. If the target project has a `CONSTRAINTS.md` (see `references/quality-bar.md`), run its floor-guard diff review and record the verdict with the other checks. For routed checklists, add `## Checklist attestation` with one "`<name>`: `<p>` pass, `<w>` waived" line per checklist (p+w = that checklist's `- [ ]` item count) and gate with `--checklists <f1,f2>`.
 - **Critical path**: add `## Critical-path` to `report.md` walking all MUST items in `references/critical-path.md` — either "all `<N>` reviewed, no waivers" (exact count) or per-item waiver lines with reasons. **NEVER silently drop a critical-path item.** Gate with `--critical`.
 
 Gate: `node scripts/craft-gate.mjs --phase p4 --dir <run-dir>` (add `--strict`, `--checklists <f1,f2>`, `--critical` as the task demands). Do not proceed to the next phase until `node scripts/craft-gate.mjs --phase <pX> --dir <run-dir>` exits 0.
@@ -120,6 +120,7 @@ Read `references/critical-path.md` first on every build or audit task — it is 
 | Task | Read |
 |---|---|
 | Website / frontend UI | `references/web-frontend.md`, `references/design-polish.md`, `references/design-distinct.md` |
+| Browser extension (Chrome MV3) | `references/browser-extensions.md`, `references/web-frontend.md` |
 | Backend / REST API | `references/backend-api.md`, `references/system-design.md` |
 | API versioning / deprecation policy | `references/api-versioning.md` |
 | Python code | `references/python.md`, `references/python-internals.md` |
@@ -136,7 +137,7 @@ Read `references/critical-path.md` first on every build or audit task — it is 
 | Vector DBs / embeddings / RAG | `references/vector-databases.md` |
 | Security review / hardening | `references/security.md` |
 | How attackers hack (offensive perspective) | `references/offensive-security.md`, `references/security.md` |
-| Testing strategy / test types | `references/testing.md` |
+| Testing strategy / test types | `references/testing.md`, `references/quality-bar.md` |
 | Speed / efficiency / scaling | `references/optimization.md`, `references/python-internals.md` |
 | Hosting / servers / GPU hosting | `references/hosting.md` |
 | How LLMs work | `references/llm-how-it-works.md` |
@@ -146,6 +147,7 @@ Read `references/critical-path.md` first on every build or audit task — it is 
 | Building MCP servers | `references/mcp-servers.md` |
 | LLM app patterns (routing, caching, gateways) | `references/llm-app-patterns.md` |
 | Planning, implementation plans, grilling the plan | `references/planning-grill.md` |
+| Reviewing delegated work, fix loops, verifying completion claims | `references/review-loop.md` |
 | Documentation / prose (README, docs, reports, PR descriptions) | `references/writing-craft.md`, scan with `node scripts/prose-scan.mjs <paths>` |
 | Look, feel and motion / UX polish | `references/design-polish.md`, `references/design-distinct.md`, `references/design-directions.md`, `references/motion-craft.md` |
 | Repo layout, naming, branches, commits, env config | `references/project-structure.md` |

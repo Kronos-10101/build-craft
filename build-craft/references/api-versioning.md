@@ -27,6 +27,20 @@ Deep companion to the Versioning & compatibility section in `references/backend-
 - [ ] Retirement is traffic-gated, not calendar-gated: per-version request metrics tracked; sunset happens when the old version is quiet, with an explicit exception process (who approves extensions, how they are tracked) for enterprise contracts.
 - [ ] Version numbers are never reused; retired versions stay documented in the changelog permanently so old client errors remain diagnosable.
 
+## Deprecation lifecycle — systems and features
+
+The policy above retires endpoint versions. This section retires whole systems, features, and old implementations. Schema-level expand/contract is a different discipline and lives in `references/databases.md`; it is not repeated here.
+
+- [ ] The deprecation decision answers 5 questions in writing before anything is announced: (1) Does it still provide unique value? If yes, maintain it and stop. (2) How many consumers depend on it, quantified? (3) Does a replacement exist? If no, build the replacement first; nothing is deprecated without an alternative. (4) What is the migration cost for each consumer? (5) What is the cost of NOT deprecating (security risk, engineer time, the complexity tax on everything nearby)?
+- [ ] The replacement is production-proven and covers every critical use case of the old system before deprecation is announced; "theoretically better" is not a replacement.
+- [ ] Advisory is the default: warnings, documentation, and nudges, with consumers migrating on their own timeline while the old system stays stable. Compulsory deprecation (a hard removal deadline) is used only when security issues, blocked progress, or unsustainable maintenance cost justify forcing migration.
+- [ ] A compulsory deprecation ships migration tooling, documentation, and support alongside the deadline. A deadline on its own is an announcement, not a migration plan.
+- [ ] The Churn Rule: whoever owns the deprecated infrastructure migrates its users, or ships backward-compatible updates that require no migration. Announcing a deprecation and leaving consumers to work it out is abandonment, not deprecation.
+- [ ] Consumers are migrated one at a time, never all at once: identify every touchpoint, switch it, verify behavior matches, remove the references, confirm no regressions. No new features are added to a deprecated system; investment goes to the replacement.
+- [ ] Removal happens only after VERIFIED zero usage, established three ways: metrics, logs, and dependency analysis. Then remove everything in one pass: the code, its tests, its documentation and configuration, and the deprecation notices themselves. The notices served their purpose; leaving them behind is how dead systems stay half-alive in the docs.
+- [ ] Zombie-code test, applied on a schedule: no commits in 6+ months, active consumers, and no owner (supporting signs: failing tests nobody fixes, dependencies with known vulnerabilities nobody updates, documentation pointing at systems that no longer exist). A system that matches gets an assigned owner who maintains it properly, or a deprecation with a concrete migration plan. Limbo is not an allowed state.
+- [ ] Deprecation planning starts at design time: every new system records how it would be removed (clean interfaces, feature flags, minimal surface area), because systems that leak implementation details everywhere are the ones that cannot be retired later.
+
 ## Migration patterns
 
 - [ ] Expand-contract for APIs (mirrors the database pattern in `references/databases.md`): add the new field/endpoint → dual-serve old and new → migrate consumers → remove the old. The API is never in a state where a supported client has nowhere to go.
@@ -47,6 +61,7 @@ Deep companion to the Versioning & compatibility section in `references/backend-
 - [ ] Mixed strategies across services on one platform (gateway on `/v2/`, billing on a date header) — consumers cannot build one version-handling code path.
 - [ ] Announcing deprecation only in docs nobody reads: headers + changelog + direct notice for breaking changes, all three.
 - [ ] Treating internal and public APIs identically: internal APIs can move faster with shorter windows, but the policy must say so explicitly — "internal, 30-day notice" beats silent breakage.
+- [ ] Announcing a compulsory deadline with no tooling, docs, or support, and expecting consumers to migrate themselves (a Churn Rule violation); or removing a system on assumed zero usage instead of verified zero usage; or leaving ownerless zombie code in limbo because assigning an owner and deprecating it both feel like work.
 
 ## Sources
 
@@ -56,3 +71,4 @@ Deep companion to the Versioning & compatibility section in `references/backend-
 - https://docs.stripe.com/api/versioning
 - https://docs.github.com/en/rest/about-the-rest-api/api-versions
 - https://semver.org/ (analogy only — library versioning is not API versioning: consumers cannot `npm update` an API)
+- Deprecation lifecycle section adapted from https://github.com/addyosmani/agent-skills (MIT): its `deprecation-and-migration` skill

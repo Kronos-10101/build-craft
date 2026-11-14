@@ -2,6 +2,8 @@
 
 A `SKILL.md` runs with **your** permissions. Its markdown is ingested as instructions, and the model cannot reliably distinguish developer instructions from ingested content — this is the textbook definition of prompt injection. Snyk Labs' "ToxicSkills" scan (Feb 2026, 3,984 skills) found 36% with prompt-injection flaws and 76 confirmed credential-theft / backdoor / exfiltration payloads; a follow-up study put the numbers at 36.82% with ≥1 security issue and 13.4% critical. Treat every third-party skill as untrusted code until it passes this checklist. Checked 2026-10-14.
 
+Snyk also ships a runnable scanner for this work: `snyk/agent-scan` (agent-scan). Run it against a quarantined download as one signal alongside the checklist below; a clean scan does not replace reading every file.
+
 ## Why 2026 made this urgent
 
 - [ ] You know the **Clinejection** chain (Feb 2026): prompt injection in an AI triage bot → CI cache poisoning → stolen npm/VSCE publishing tokens → malicious `cline@2.3.0` with a `postinstall` payload → ~4,000 developer machines compromised in 8 hours. Lesson: a skill adjacent to CI, publishing, or credentials is a supply-chain weapon, not a helper.
@@ -64,6 +66,15 @@ Don't improvise the order — quarantine first, decide last:
 - [ ] You decided the install scope: project-local for single-project skills, global only for genuinely universal ones.
 - [ ] You recorded the vetting verdict (pass / sandbox / reject) with the SHA and date, so the next update re-verifies instead of assuming.
 
+## Retrieval verification (fetch-on-demand catalogs)
+
+Catalog routers that fetch an index on demand, with Google's `finding-google-skills` in `google/skills` as the reference implementation, add a failure mode the checklist above does not cover: the lookup itself can fail quietly. Apply these rules to any fetched catalog, index, or skill body:
+
+- [ ] **A fetch counts only if the body parses as the expected structure.** For a JSON index, the body must parse as JSON and hold the expected array (a `skills` array in the Google index). A 404 page, an HTML error page, an empty body, or anything that fails to parse is a FAILED fetch, even when the tool call returned without raising.
+- [ ] **Never retry a TLS or certificate failure with verification disabled.** No `curl -k` or `--insecure`, no `-SkipCertificateCheck`, and no certificate-callback workaround in any language. A certificate failure is a failed retrieval and is final for that attempt: you are about to follow instructions from whatever comes back, so an unverified catalog is worse than no catalog.
+- [ ] **Never present a skill as found when the lookup failed.** Until a catalog has parsed in this session, do not name a skill from it, do not describe one, and do not state that none applies. Say plainly that the catalog could not be reached and that you are answering without it.
+- [ ] **Keep a failed lookup distinct from an empty result.** Only a successfully parsed catalog can support the claim that no published skill covers a request; a failed fetch supports no claim about the catalog's contents at all.
+
 ## Update and removal hygiene
 
 - [ ] You never run `skills update` blind: diff the new version against the vetted SHA before accepting it.
@@ -84,6 +95,27 @@ Don't improvise the order — quarantine first, decide last:
 - [ ] Any deviation between documented and observed behavior is a reject, not a question — investigate, don't rationalize.
 - [ ] After the trial you can enumerate every persistent change the skill made (files, config, hooks) and remove each one cleanly.
 
+## Baseline-first testing for skill and instruction documents
+
+Writing a skill is test-driven development applied to documentation (the method in obra/superpowers' `writing-skills`). Test the document the way you would test code: baseline first, then the smallest wording that changes the baseline.
+
+- [ ] **Run the pressure scenario WITHOUT the skill first.** Record the agent's behavior and its verbatim rationalizations before writing a word of guidance. If you did not watch an agent fail without the skill, you do not know whether the skill teaches the right thing.
+- [ ] **Match the form to the failure.** The form that fixes one failure type measurably backfires on another:
+
+| Baseline failure | Right form | Wrong form |
+|---|---|---|
+| Discipline failure: the agent knows the rule and violates it under pressure | Prohibition plus a rationalization table built from the baseline run | Soft guidance |
+| Wrong-shape output: the agent complies, but the output has the wrong parts or order | Positive recipe or output contract: state what the output is, part by part, in order | A prohibition list, which agents negotiate with and which can produce more of the unwanted content than no guidance at all |
+| Omitted element: the agent produces the thing but leaves out a required part | A required slot for that element in the template the agent fills in | A prose reminder near the template |
+| Conditional behavior: the right action depends on a condition | A conditional keyed to an observable predicate | An unconditional rule with exemption clauses |
+
+- [ ] **Use no nuance clauses.** A clause such as "unless it matters" reopens the negotiation the guidance exists to close. Write a real exception as its own conditional, keyed to an observable predicate.
+- [ ] **Micro-test the wording before running full scenarios.** Use fresh-context samples, one per call, with the guidance placed in the realistic context it will live in and a task that tempts the failure.
+- [ ] **Always include a no-guidance control.** If the control does not exhibit the failure, do not author the guidance: there is nothing to fix.
+- [ ] **Run 5+ reps per variant, and read every flagged match manually.** Automated counts overstate both failure and success, because template echoes and quoted counter-examples register as hits.
+- [ ] **Treat variance across reps as a failed test.** When wording binds, reps converge on the same shape; five different readings across five reps mean the wording is not binding, so tighten the form before adding words.
+- [ ] **Keep the skill's `description` to triggers only.** State when to use the skill, never a summary of its workflow: agents follow the summary instead of reading the skill.
+
 ## Verdict
 
 - **Pass** — all files read, flows mapped, no unexplained red flags, pinned to SHA, source reputable. Install.
@@ -98,3 +130,6 @@ Don't improvise the order — quarantine first, decide last:
 - https://github.com/pranava0x0/vibe-coding-security/blob/HEAD/advisories/2026-09-gtig-adversarial-ai-agentic-pipelines.md
 - https://github.com/nextlevelbuilder/skillx/blob/HEAD/plans/reports/researcher-260305-prompt-injection-defense-comprehensive-study.md
 - https://github.com/dirtybits/agentvouch/blob/HEAD/web/content/blog/2026-04-02-skill-supply-chain-attack.md
+- https://github.com/snyk/agent-scan
+- https://github.com/google/skills/tree/main/skills/developers/finding-google-skills
+- https://github.com/obra/superpowers/blob/HEAD/skills/writing-skills/SKILL.md

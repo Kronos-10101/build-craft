@@ -67,6 +67,23 @@ Concrete pass/fail rules for the TypeScript language and its toolchain: compiler
 - [ ] Published packages validated before release: `npx attw --pack` and `npx publint` green; the `exports` map covers `types`, `import`, and `default` for every entry point.
 - [ ] Native Node APIs preferred over deps where they exist (`fetch`, `node:test`, `node:assert`); package scripts run via `node --run` instead of a task-runner dependency.
 
+## Dates and times — Temporal, not `Date`
+
+- [ ] All new date/time code uses the `Temporal` API; `Date` is the legacy fallback for interop only (library boundaries, `toTemporalInstant()` conversions) — no new `new Date(...)` arithmetic, parsing, or formatting in app code.
+- [ ] The type matches the concept, picked before any code is written: `Temporal.PlainDate` (calendar date), `Temporal.PlainTime` (wall-clock time), `Temporal.PlainDateTime` (local date-time, no zone), `Temporal.ZonedDateTime` (moment pinned to a place), `Temporal.Instant` (exact point on the timeline), `Temporal.Duration` (span).
+- [ ] Location-agnostic partial dates are `PlainDate`: birthdays, due dates, billing dates, and holidays are stored and compared as `PlainDate` (serialized `YYYY-MM-DD`) — never as a `Date` pinned to midnight.
+- [ ] The `Date`-at-midnight hack is banned: `new Date('2026-01-01')` parses as UTC midnight and renders as the previous day west of UTC; `PlainDate.from('2026-01-01')` has no zone and cannot shift.
+- [ ] Location-bound events (meetings, departures, deadlines in a city) are `ZonedDateTime` with an explicit IANA zone; floating local schedules stay `PlainDateTime` until a zone is deliberately attached via `.toZonedDateTime(tz)`.
+- [ ] Exact timestamps (logs, event ordering, sync) are `Instant`: nanosecond precision versus `Date`'s milliseconds, and no hidden local-zone rendering.
+- [ ] Sorting high-precision timestamps uses `Temporal.Instant.compare(a, b)` (and `PlainDate.compare` / `.equals()` for the plain types) — never string comparison, never `Date` subtraction, never `getTime()` diffs that overflow past millisecond precision.
+- [ ] Arithmetic goes through `.add()` / `.subtract()` with `Temporal.Duration` values; month-end behavior is explicit (`overflow: 'constrain'` clamps Jan 31 + 1 month to Feb 28, `'reject'` throws) — no hand-rolled day/month math.
+- [ ] Durations are formatted for users with `Intl.DurationFormat` (or `duration.toLocaleString(locale, { style })`) in `long`/`short`/`narrow`/`digital` styles — no manual `` `${d.hours}h ${d.minutes}m` `` string building.
+- [ ] Comparing or balancing durations that carry calendar units (`years`/`months`/`weeks`) passes a `relativeTo` anchor (`Duration.compare(a, b, { relativeTo })`, `.round({ relativeTo })`) — calendar units have no fixed length without one, and DST crossings change the answer.
+- [ ] Non-Gregorian calendars are a conversion, not a rewrite: `.withCalendar('buddhist')` / `'japanese'` / `'chinese'` (or the `calendar` field in `from()`) re-expresses the same date with era-aware fields — no hand-coded era offsets or year arithmetic.
+- [ ] DST gaps and overlaps are detected, not silently resolved: `ZonedDateTime.from(input, { disambiguation: 'reject' })` throws a `RangeError` on nonexistent or ambiguous local times; the default `'compatible'` resolution is used only where a silent pick is acceptable.
+- [ ] Temporal values are immutable: every method returns a new object, so a shared `PlainDate` can be passed around without defensive copies (the mutable-`Date` aliasing bug class does not exist here).
+- [ ] Separate date and time inputs are combined with methods (`PlainDate.from(d).toPlainDateTime(t).toZonedDateTime(tz)`), never by interpolating an ISO string and reparsing it.
+
 ## Testing
 
 - [ ] Vitest 4.1+/5.x (5.0 released Sep 2026) is the default for new projects; Jest only for legacy suites; one runner per package, never mixed.
@@ -111,3 +128,4 @@ grep -E '"baseUrl"|"moduleResolution":\s*"node"' tsconfig*.json     # should be 
 - https://dev.to/gabrielanhaia/zod-4-vs-valibot-vs-arktype-a-type-system-teardown-4lha
 - https://github.com/opendatahub-io/notebooks/blob/HEAD/docs/architecture/decisions/0012-typescript-developer-tooling.md
 - https://www.alekseialeinikov.com/en/blog/topics/programming/biome-2026-replace-eslint-prettier-benchmark
+- GoogleChrome/modern-web-guidance (Apache-2.0) — "Dates and times" section: guides on location-agnostic data (Plain types), high-precision timestamp sorting, global calendar systems, event differentials with `Temporal.Duration` and `Intl.DurationFormat`, and global-event coordination with `ZonedDateTime` (checked 2026-11-15)

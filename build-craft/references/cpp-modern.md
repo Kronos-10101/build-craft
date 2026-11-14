@@ -115,6 +115,17 @@ Many machines do not have C++23/C++26-capable compilers. Never recommend a featu
 - [ ] One package manager per project: Conan 2.x by default (profiles, lockfiles, cross-compilation, CI ergonomics); vcpkg for Windows/Microsoft-first shops — always manifest mode (`vcpkg.json`), binary caching on (`VCPKG_BINARY_SOURCES`), never commit `vcpkg_installed/`.
 - [ ] Supply chain: SBOM (CycloneDX/SPDX) emitted on every build; CVE feeds (NIST NVD + GitHub Advisory) gated in CI (e.g. grype `--fail-on critical`).
 
+## C++ on the web — Emscripten in production
+
+- [ ] Two flag profiles, kept consistent across compile and link steps. Release: `-O3` for speed (or `-Os` / `-Oz` when payload size rules), `-flto` on both steps, `-sSTRICT`, no `-g`, no `-sASSERTIONS`, `--closure=1` on link when no bundler minifies the glue. Debug: `-O0`, `-g` (plus `-gsource-map` on link), `-sASSERTIONS` on; never ship a debug profile.
+- [ ] Ship an ES6 module from a worker: `-sEXPORT_ES6` (it implies modularize; do not repeat it) with `-sENVIRONMENT=worker`, instantiated inside a dedicated module Worker so multi-millisecond calls never block the main thread. Pass results back as transferable buffers.
+- [ ] Treat every JS↔wasm call as a toll: batch work into whole-buffer entry points (one call per frame, image, or block) and keep chatty loops entirely on one side of the boundary. A per-pixel or per-sample call hands the boundary cost back and erases the wasm gain.
+- [ ] Re-read heap views after any call that can grow memory: with `-sALLOW_MEMORY_GROWTH`, growth detaches the old `ArrayBuffer`, so a cached `HEAPU8` view silently points at dead memory.
+- [ ] Test at the memory limits, in a real browser: run the assertions build until clean, set an explicit memory ceiling and test past it, and size `-sSTACK_SIZE` deliberately (the 64 KB default stack overflows on recursion that native stacks absorb; convert deep recursion to iteration or raise it, e.g. `1MB`).
+- [ ] Link statically: prefer `.a` archives; avoid dynamic linking (`-sMAIN_MODULE` / `-sSIDE_MODULE`) unless runtime plugin loading is a hard requirement, since it adds size and startup cost to every load.
+- [ ] CMake projects build through the toolchain wrappers: `emcmake cmake .. -DCMAKE_BUILD_TYPE=Release` then `emmake make`; autoconf projects use `emconfigure ./configure --host=wasm32-unknown-emscripten --disable-shared`. Wire the wasm build into the project's normal build script so artifacts are rebuilt, not committed stale.
+- [ ] Flag hygiene: omit settings that are already defaults, write boolean `-s` flags without `=1`, and prefer `-pthread` over `-sUSE_PTHREADS` (serve cross-origin isolated, COOP/COEP, when you use it, since it needs `SharedArrayBuffer`).
+
 ## Sources
 
 - https://en.cppreference.com/w/cpp/compiler_support
@@ -125,3 +136,4 @@ Many machines do not have C++23/C++26-capable compilers. Never recommend a featu
 - https://github.com/mpusz/mp-units/blob/HEAD/docs/getting_started/cpp_compiler_support.md
 - https://github.com/x-ecutionner/cmake/blob/HEAD/Help/manual/cmake-cxxmodules.7.rst
 - https://wrocpp.github.io/toolset/cpp-supply-chain-2026/
+- Emscripten: GoogleChrome/modern-web-guidance, cpp-on-the-web guide (Apache-2.0) — https://github.com/GoogleChrome/modern-web-guidance

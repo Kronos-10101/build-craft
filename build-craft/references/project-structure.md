@@ -94,6 +94,46 @@ Covers how a repository is organized and governed: folder layouts per ecosystem,
 - [ ] PR links its issue; all comment threads are resolved before merge; head branches auto-delete after merge.
 - [ ] One merge strategy per repo (squash, rebase, or merge commits), chosen deliberately and encoded in the ruleset's linear-history setting — mixed strategies produce unreadable history.
 
+## Worktrees & finishing a branch
+
+The branching *strategy* (which branches exist, how long they live) is settled above. This section is the *procedure*: how an isolated workspace is created, and how a finished branch is integrated. The two are not interchangeable.
+
+### Detect isolation before creating anything
+
+- [ ] First step, always: compare `git rev-parse --git-dir` against `git rev-parse --git-common-dir` (resolve both to physical paths). Eyeballing the directory name settles nothing; harness-created isolation fools it.
+- [ ] Submodule guard: a differing pair is also true inside a submodule, so check `git rev-parse --show-superproject-working-tree`; a returned path means submodule, not worktree, and the checkout is treated as a normal repo.
+- [ ] Pair differs and the guard is clear: already in a linked worktree. Create nothing, proceed to setup, and report the workspace path plus branch state (named branch, or detached HEAD, which defers branch creation to finish time).
+- [ ] Pair is equal (or the guard fired): normal checkout. Honour any worktree preference already declared in project instructions; otherwise get the user's consent before creating one, and work in place if they decline.
+
+### Create the workspace
+
+- [ ] Prefer the platform's native worktree tooling (an EnterWorktree-style tool, a `/worktree` command, a `--worktree` flag) over raw `git worktree add`. The native tool owns placement, branch creation, and cleanup; a hand-made worktree is state the harness cannot see or manage.
+- [ ] Raw git is the fallback only, and its directory is chosen in this order: a directory preference declared in instructions; an existing project-local `.worktrees/`; an existing `worktrees/` (if both exist, `.worktrees/` wins); the default `.worktrees/` at the project root.
+- [ ] Verify the chosen directory is git-ignored *before* creating anything in it (`git check-ignore -q .worktrees`). If it is not ignored, add it to `.gitignore` and commit that change first; an unignored worktree directory commits a whole second tree into the repo.
+- [ ] Create with `git worktree add "$LOCATION/$BRANCH" -b "$BRANCH"` and move into it. If creation fails with a sandbox or permission error, say so, and work in the current directory instead of fighting the sandbox.
+- [ ] Run project setup in the fresh workspace (the ecosystem's install step, detected from its manifest), then run the baseline test suite *before* starting work. A failing baseline is reported with its failures and the proceed-or-investigate call goes to the user; a green baseline is reported with its test count, so every later failure is attributable to the new work.
+
+### Finish: the integration decision is the user's
+
+- [ ] Verify first: run the full test suite on the tree about to be integrated. Any failure stops the procedure; the options below are presented only on green.
+- [ ] Re-detect the environment (same `GIT_DIR` vs `GIT_COMMON` comparison) and capture the worktree path before any directory change, and confirm the base branch the work forked from; if the base is not already known, state the best guess and ask. Merging into the wrong base is expensive to undo.
+- [ ] Present exactly three options, and wait for the answer: (1) merge back to the base branch locally; (2) push and create a pull request; (3) keep the branch as-is for the user to handle later. Integration is the user's decision, never inferred from momentum, tone, or how finished the work feels. (Detached HEAD is the one variant: no merge option exists, so the menu is push-as-new-branch plus keep-as-is.)
+- [ ] Merge locally: from the main repo root, check out the base, pull, merge the feature branch, then verify the test suite on the *merged result*. Only a green merged result earns cleanup; a red one stops everything, with branch and worktree left in place for investigation.
+- [ ] Push and PR: push with upstream set, open the PR against the confirmed base using the forge's tooling and the repo's PR template, report the URL, and keep the worktree: PR feedback is fixed in it.
+- [ ] Keep as-is: report the branch name and the preserved worktree path, and touch nothing.
+
+### Discard: typed confirmation only
+
+- [ ] Discard is not a fourth menu option and is never offered proactively; it exists only when the user explicitly asks to throw the work away.
+- [ ] Before anything is deleted, show exactly what dies: the branch name, the full commit list on it, and the worktree path; then require the typed word `discard` as confirmation. Loose assent ("yeah, get rid of it") does not authorize deletion.
+- [ ] On that confirmation only: return to the main repo root, clean up the worktree (below), then force-delete the branch.
+
+### Cleanup is provenance-based
+
+- [ ] Remove only worktrees this workflow created, identified by location: the path sits under `.worktrees/` or `worktrees/`. Anything else belongs to the host environment; leave it in place, or exit it with the platform's own workspace tool.
+- [ ] Removal runs from outside the worktree (the main repo root), followed by `git worktree prune` to clear stale registrations; the branch is deleted only after the merged-result tests pass (or under a confirmed discard).
+- [ ] If removal is refused because the worktree holds modified or untracked files, those files exist nowhere else. Surface them (`git -C <worktree> status --porcelain -uall`) and ask which fate they get (commit them to the branch, move them into the main repo, or delete them as unrecoverable). Never reach for `--force` unilaterally: the refusal is the safeguard working, not an obstacle.
+
 ## Environment config & the secret ladder
 
 - [ ] No secrets or real `.env` committed: `.env`, `.env.local`, `*.pem`, `*.key`, `*secret*` are gitignored and absent from history; secret scanning (e.g. GitGuardian / push protection) is on.
@@ -114,6 +154,40 @@ Covers how a repository is organized and governed: folder layouts per ecosystem,
 - [ ] Yanked releases are marked `## [0.0.5] - 2014-12-13 [YANKED]`; deprecations and removals are always called out so upgrades are not surprises.
 - [ ] One owner for the changelog: either hand-maintained under `Unreleased`, or fully automated with **release-please** — never both; the automated file is not hand-edited.
 - [ ] release-please (Google-maintained, `googleapis/release-please-action`): config and `.release-please-manifest.json` committed; it opens/updates a Release PR from conventional commits on `main`, bumps the version, regenerates `CHANGELOG.md`, and creates the tag + GitHub Release on merge — version fields in manifests are owned by the tool.
+
+## ADRs & documentation drift
+
+An ADR records why a decision was taken: the context, the constraints, the alternatives that lost, and what the choice costs. Code shows what was built; the ADR is the only place the reasoning survives.
+
+### Match the existing ADR convention first
+
+- [ ] Before writing the first ADR in a repo, inspect what is already there: existing ADRs, project instructions, and ADR tooling or config (an `.adr-dir` file, an `adr-tools` setup). An established convention beats any default in this section, every time.
+- [ ] Match the existing location and format exactly: directory, file extension, and markup (Markdown vs reStructuredText, a MADR layout vs a local one).
+- [ ] Continue the existing numbering and naming sequence (`0007-…`, `ADR-007-…`, whatever the repo already runs); never restart at 001 and never introduce a second scheme alongside the first.
+- [ ] Reuse the repo's existing heading set for the record itself; do not impose a foreign template's sections on a repo that already has its own.
+- [ ] Conflicting evidence (two schemes in the wild, config pointing one way and files the other) is surfaced to the owner, not resolved silently by adding a third scheme.
+- [ ] Only when no convention can be established, fall back to a default: sequential files under `docs/decisions/` (or `docs/adr/`) carrying status, date, context, decision, alternatives considered with rejection reasons, and consequences.
+- [ ] Write an ADR for decisions that are expensive to reverse: framework or major dependency, data model, auth strategy, API shape, build/hosting platform. Skip ADRs for choices a single PR can undo.
+
+### ADR lifecycle
+
+- [ ] Statuses move one way: Proposed → Accepted → Superseded or Deprecated. A record sits in exactly one status at a time, and the status is written in the record.
+- [ ] ADRs are never deleted. A reversed decision is history worth keeping, not an embarrassment to erase.
+- [ ] Supersede by reference: write a new ADR for the new decision, have it name the record it replaces, and update the old record's status to Superseded by that new ADR. Both directions of the link exist.
+- [ ] Deprecated marks a decision that no longer applies with no replacement (the feature or system went away); it still stays in the sequence.
+
+### Doc-drift test (git-based)
+
+- [ ] Judge staleness from version control, never from how confident a document sounds: take the last commit that touched the code (`git log -1 --format=%H -- <code-path>`) and the last commit that touched its doc (same form, doc path), then compare the two commits.
+- [ ] Same commit for both: the doc changed together with the code; report it as changed-together.
+- [ ] The doc commit is an ancestor of the code commit (`git merge-base --is-ancestor <doc> <code>` succeeds): code moved after the doc; report the doc as stale.
+- [ ] The code commit is an ancestor of the doc commit: the doc was touched after the code; report it as current on that evidence.
+- [ ] Neither is an ancestor of the other (divergent branches, a rebase, a shallow clone): the honest result is "can't tell". Report exactly that; never upgrade unordered history to "current" to make a report look finished.
+
+### Change logs for docs
+
+- [ ] A corrected document that carries a change log gets a new dated entry appended, stating why the correction was made; earlier entries are never rewritten, reworded, or collapsed.
+- [ ] The division of labour is the reason: git holds the old text, the log holds the reasons. Rewriting the log destroys the only copy of the reasoning while preserving nothing git did not already have.
 
 ## READMEs that actually help
 
@@ -191,3 +265,5 @@ Deploying safely is a repo-hygiene concern: the same immutable artifact ships to
 - https://github.com/edouardmisset/learning-curve/blob/HEAD/src/content/docs/learn/guides/project/editorconfig.mdx
 - https://github.com/nullbytelabs/work/blob/HEAD/docs/secrets-management-and-injection.md
 - https://github.com/hamchowderr/braynee/blob/HEAD/skills/setup/rules-templates/secrets.md
+- https://github.com/addyosmani/agent-skills — documentation-and-adrs skill: match-the-existing-convention rule, ADR lifecycle, git-based doc-drift test, append-only change logs (MIT License; adapted, original wording)
+- https://github.com/obra/superpowers — using-git-worktrees and finishing-a-development-branch skills: isolation detection with the submodule guard, ignore verification, baseline tests, the three-option finish menu, typed discard, provenance-based cleanup (MIT License; adapted, original wording)

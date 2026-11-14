@@ -98,6 +98,26 @@ Concrete production patterns for LLM apps: wrappers vs frameworks, routing and g
 - [ ] Output tokens are the expensive half of most bills — verbosity is budgeted and capped per request class, not just inputs.
 - [ ] Non-interactive bulk work is routed to batch (see above) before any other cost optimization is attempted — it's the largest single lever.
 
+## Built-in browser AI — on-device inference in Chrome
+
+- [ ] Two surfaces exist: the general `LanguageModel` Prompt API for open-ended work, and the narrow task APIs (`Summarizer`, `Translator`, `LanguageDetector`) for one fixed job each. Prefer a task API when it fits; it needs less prompt engineering and fails in fewer ways.
+- [ ] Feature-detect the global, then call `availability()` (with the identical options object you will pass to `create()`) before any use. Branch on every state: `available` (run now), `downloadable` / `downloading` (offer the download), `unavailable` (take the fallback).
+- [ ] The download is the product problem, not a footnote: the model needs roughly 22 GB free on the profile volume (Chrome 148, desktop) and `create()` in a downloadable state only succeeds from a user gesture such as a click. Design the consent, progress (`monitor` + `downloadprogress`), and abandonment UX before shipping the feature.
+- [ ] Sessions are resources: set system instructions via `initialPrompts` at `create()` time, `clone()` a clean base session for parallel or repeated tasks instead of re-creating it, and `destroy()` every session (clones first, base last) when its task ends.
+- [ ] Structured output uses `responseConstraint` with a plain JSON Schema object passed to `prompt()`; parse the result as JSON. Never prompt-and-pray for JSON on-device either.
+- [ ] Model output is untrusted text: render with `textContent` only, never `innerHTML`. If formatted output is unavoidable, sanitize the complete combined output, not chunk by chunk.
+- [ ] A fallback ladder is mandatory, in order: task API or Prompt API on-device, then Transformers.js for a smaller local model, then a cloud API, then the feature disabled with a plain explanation. `unavailable` is a normal state on most hardware, not an error path.
+
+## Eval flywheel — loop until the target holds
+
+- [ ] Run five stages in order on the first pass: (1) prepare the eval data, (2) run inference, (3) evaluate against fixed metrics, (4) cluster the failures by loss pattern, (5) change the one thing the largest cluster points at.
+- [ ] After the first pass, loop stages 2–5 only. Budget 5–10 iterations before expecting targets to hold; one clean iteration proves nothing about the neighbouring metrics.
+- [ ] Every fix is checked for collateral damage: the target metric must improve and no other tracked metric may regress. Compare candidate against baseline explicitly, not against memory.
+- [ ] Never lower a threshold, rubric, or pass bar to make a run pass. A moved bar hides the failure it was meant to catch; fix the system, not the measurement.
+- [ ] Never skip or delete a flaky case. Flakiness is a finding about nondeterminism (pin temperature, tighten instructions, or isolate state), and the case stays in the set until it passes reliably.
+- [ ] Never grade from your own reading of traces. Scores come from the evaluation run itself; a trace that looks right is a hypothesis, and self-grading does not generalize.
+- [ ] Persist every run (scores plus the change that produced them) so iteration N can be diffed against iteration N−1 and against the original baseline.
+
 ## Sources
 
 - https://github.com/navapbc/rebar/blob/HEAD/docs/experiments/workflow-remediation-pocs/structured-output-research.md
@@ -108,3 +128,5 @@ Concrete production patterns for LLM apps: wrappers vs frameworks, routing and g
 - https://github.com/kalilurrahman/kr-token-ops-hub/blob/HEAD/public/library/trends/batch-api-arbitrage-2026.md
 - https://github.com/mamta352/ailearnings/blob/HEAD/source/blog/posts/llm-rate-limits.md
 - https://github.com/sigilipelli/llm-dev-mastery-path/blob/HEAD/docs/level-1/08-errors-rate-limits-cost.md
+- Built-in browser AI: GoogleChrome/modern-web-guidance, built-in-ai guides (Apache-2.0) — https://github.com/GoogleChrome/modern-web-guidance
+- Eval flywheel: google/skills, cloud/agent-platform-eval-flywheel (Apache-2.0) — https://github.com/google/skills

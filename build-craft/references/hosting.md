@@ -95,6 +95,65 @@ The request lifecycle from DNS to database, every hosting model with 2026 price 
 - [ ] Smoke tests run against the new version before traffic shifts: critical user path works, writes actually persist, external services reachable, metrics dashboard updating.
 - [ ] Deploy ≠ release: feature flags decouple shipping code from exposing it, so a bad flag flips off in seconds without a redeploy; drain instances before terminating (stop new traffic, let in-flight requests finish).
 
+## Launch & rollout
+
+Deploying code and releasing it to users are two separate acts. Code lands dark, exposure widens in stages, and every stage has a numeric exit condition written down before the stage starts.
+
+### Staged rollout sequence
+
+- [ ] Stage 0, deploy with the flag OFF: the new code is live in production and reachable by nobody; verify the deploy itself (health check green, no new errors, dashboards updating) before anyone sees the feature.
+- [ ] Stage 1, team only: flag ON for internal users; the team runs the real feature against real production data for a set window (24 h is a sane default) while an owner watches errors and latency.
+- [ ] Stage 2, canary at 5%: flag ON for 5% of users; compare canary against baseline on the threshold table below for 24 to 48 h; advance only when every row is in the advance column.
+- [ ] Stage 3, widen in steps: 25%, then 50%, then 100%, with the same comparison and the same hold/rollback rules at each step; a hold at any step freezes the percentage, it does not quietly widen later.
+- [ ] Stage 4, full rollout: flag ON for everyone, monitoring stays heightened for about a week, then the flag enters cleanup (below); rollout is not done until the flag is gone.
+
+### Advance / hold / rollback thresholds
+
+| Metric | Advance | Hold and investigate | Roll back |
+|---|---|---|---|
+| Error rate vs baseline | Within 10% of baseline | 10 to 100% above baseline | More than 2x baseline |
+| p95 latency vs baseline | Within 20% of baseline | 20 to 50% above baseline | More than 50% above baseline |
+| New client JS errors | No new error types | New types in under 0.1% of sessions | New types in over 0.1% of sessions |
+| Core business metric | Neutral or positive | Decline under 5% (may be noise) | Decline over 5% |
+
+- [ ] Roll back at once, without waiting for the table, on: data-integrity damage, a security hole opened by the release, or a spike in user reports that matches the change.
+- [ ] A fast error-budget burn during a canary counts as a hold even when each single row still looks green: check the burn rate, not only the current rate.
+
+### Error-budget release gate
+
+- [ ] More than 20% of the error budget remaining: ship normally, with the staged rollout above and close monitoring.
+- [ ] 0 to 20% remaining: slow-only mode; ship small, low-risk changes only, no high-risk launches, no wide canary jumps.
+- [ ] Budget exhausted: feature freeze; engineering effort goes to reliability until the budget resets, then the fix that recovered the budget is baked in before normal pace resumes.
+- [ ] The gate is read off the SLO dashboard at release time and recorded in the release notes; it is a measurement, not a negotiation in the launch thread.
+
+### Feature-flag lifecycle
+
+- [ ] Every flag is created with a named owner and an expiry date; a flag with neither is rejected at review.
+- [ ] Test both flag states in CI; never nest flags (nested flags multiply the state combinations nobody tested).
+- [ ] Cleanup deadline: flag and the dead code path are removed within 2 weeks of full rollout at the latest; expired flags are reported like stale dependencies, not left as decoration.
+
+### First-hour post-launch verification
+
+- [ ] Health endpoint returns 200 on every instance that takes traffic.
+- [ ] Error dashboard shows no new error types and no rate change against baseline.
+- [ ] Latency dashboard (p50, p95, p99) shows no regression at any percentile that matters to the SLO.
+- [ ] The critical user flow is walked by hand, end to end, including one real write that is then read back.
+- [ ] Logs are flowing, readable, and tagged with the release version.
+- [ ] The rollback mechanism is confirmed ready (dry run where the platform allows it); one named person owns the first hour, nobody assumes someone else is watching.
+
+### Rollback-plan template
+
+- [ ] Written before the deploy, per release, with these fields filled in: feature/release name; trigger conditions (the rollback column of the table above, in numbers); ordered rollback steps; database position (which migration, its verified rollback command or runbook link, and whether data written by the new version is preserved or cleaned up); who approves; how recovery is verified; who is told, and where.
+- [ ] Time to rollback is stated per mechanism, measured or rehearsed, not guessed:
+
+| Mechanism | Time to rollback |
+|---|---|
+| Flip the feature flag off | Under 1 minute |
+| Redeploy the previous immutable version | Under 5 minutes |
+| Roll back the database migration | Under 15 minutes |
+
+- [ ] If the honest time for the mechanism a release actually needs beats none of these bands, that gap is a launch blocker or an accepted risk signed by the owner; it is never discovered during the incident.
+
 ## AI/GPU hosting
 
 - [ ] Why GPUs cost what they do: scarce datacenter hardware plus power and cooling — an H100 draws ~700 W — plus NVLink/InfiniBand interconnect at multi-node scale. The premium over raw FLOPS is hardware scarcity + electricity + networking, not just compute. (Model choice lives in `ml-landscape.md`; this section is about paying for the metal.)
@@ -106,6 +165,42 @@ The request lifecycle from DNS to database, every hosting model with 2026 price 
 - [ ] Rule of thumb: ≤3B fits a T4 (~8 GB); 7–8B needs ~22 GB (L4/A10); 13B ~30 GB (L40S); 30B ~65 GB (A100-80/H100); 70B-class needs 2× H100 or 1× H200 (141 GB); beyond that is multi-node territory — or an API.
 - [ ] Inference is memory-bandwidth bound, not compute bound: a faster GPU can be *cheaper per unit of work* (H100 ~11× the tokens/s of an L4 at ~5× the price) — size on measured tok/s per dollar, not $/hr.
 - [ ] API-vs-self-host rule of thumb: below sustained high utilization, a managed inference API (~$0.8–5/M tokens for 70B-class) wins; a single on-demand H100 running 24/7 is ~$2,400–2,900/mo before engineer time. Self-host when: utilization is predictably high, data can't leave your network, or you need a fine-tuned custom model the APIs don't offer.
+
+## PWA install: Web Install API and origin migration
+
+Installation is an enhancement, never a gate: the app works in a browser tab whether or not it is ever installed, and every install completes through browser-owned consent UI. No page can install silently.
+
+### Prerequisites
+
+- [ ] The app ships a web app manifest with an explicit, stable `id` (same-origin with the document), a `start_url`, `display`, and 192px and 512px icons; the manifest URL stays stable, because identity hangs off it.
+- [ ] For the current-document case the manifest is linked from the page (`<link rel="manifest">`); for installing a different app, its manifest is served over HTTPS with a JSON MIME type, without credentials or redirects, and its `start_url` shares the manifest origin.
+
+### The `<install>` element
+
+- [ ] Pick the element when the browser's own button is acceptable: the control is user-agent rendered, consistent across sites, needs no JavaScript to trigger, and installing another app needs no separate permission prompt before the confirmation dialog.
+- [ ] Costs, accepted knowingly: styling of the button is restricted, and the browser caps how many `<install>` elements a page may carry, so large catalogs belong on `navigator.install()` instead.
+- [ ] No attributes installs the current document's linked app; a `manifest` attribute pointing at another app's manifest URL installs that app (cross-origin catalogs and suite launchers included); when the target manifest declares no `id`, add the `manifestid` attribute with its computed ID (its `start_url` resolved against the manifest URL, fragment stripped) so the browser can verify the identity it is installing.
+- [ ] Never imitate, overlay, or restyle the browser control to look native: that presentation is the user's protection against deceptive prompts.
+- [ ] Handle the `installresult` event and branch on `event.result`: `success` (installed, or the user approved opening an already-installed app; the page cannot tell which), `aborted` (user cancelled, or a browser condition stopped it), `invalid-data` (bad `manifest`/`manifestid`, bad manifest response, or missing required fields); report the outcome in a `role="status"` region.
+- [ ] Fallback: put child content inside the element (a link to a maintained install-help page) for browsers that do not render the control; if no maintained help page exists, leave it empty rather than shipping a dead imitation button.
+
+### `navigator.install()`
+
+- [ ] Pick the method when the install UI must match the site: full styling control and no cap on the number of install affordances, at the cost of requiring JavaScript, and a `web-app-installation` permission prompt before the confirmation dialog when installing a different app.
+- [ ] Secure context only; feature-detect (`typeof Navigator.prototype.install === "function"`) and keep the custom button `hidden` until a mechanism exists; call the method directly inside the click handler, because a delayed call loses the transient user activation it requires.
+- [ ] No arguments installs the current document's linked app (its manifest must declare an `id`); pass `{ manifest }` for another app, plus `manifestId` when that manifest omits `id`.
+- [ ] Handle the promise, not just the happy path: resolution means installed or approved-to-open; `AbortError` means the user cancelled, permission was denied, or the environment cannot install (keep the button, cancellation is a normal choice); `DataError` means manifest problems (missing, unreachable, redirected, wrong content type, mismatched ID); `NotAllowedError` means the activation was lost.
+- [ ] Fallback chain where the method is absent: capture `beforeinstallprompt`, `preventDefault()` it, and reveal the button only then; the captured event is single-use, so clear it before awaiting `userChoice` and hide the button again unless a fresh event fires; where neither mechanism exists, show no install button at all and let the browser's own affordance do the job.
+
+### Installed-app origin migration
+
+- [ ] Use origin migration when an installed app moves origin, so the handover preserves OS integration (home-screen icons, taskbar and dock shortcuts) instead of the manual uninstall-and-reinstall path that loses it.
+- [ ] Same-site only: old and new origins must share one registrable domain (eTLD+1); `app.example.com` to `new.example.com` qualifies, `example.com` to `example.org` does not, and no config fixes that.
+- [ ] New origin claims the predecessor: its manifest (which must have an `id`) lists the old app under `migrate_from` with the old app's ID.
+- [ ] Old origin authorizes the successor: serve `/.well-known/web-app-origin-association` on the old origin with `allow_migration: true` keyed by the new app's ID; without this file the claim is ignored, which is the anti-hijack control.
+- [ ] Optional accelerators: add `migrate_to` (new app ID plus `install_url`) to the old manifest so the browser can surface the move before the user visits the new site; set `behavior: "force"` in the new manifest's `migrate_from` entry only when the move must be mandatory, knowing force still shows a dialog (Update to the new app, or Remove it), never a silent swap.
+- [ ] Data and permissions do not migrate: localStorage, IndexedDB, cookies, and granted permissions (notifications, geolocation) stay bound to the old origin; move user data separately (server-side sync or cross-origin messaging) and re-request permissions on the new origin.
+- [ ] Unsupported browsers keep the old install: put a banner on the old origin directing users to the new site, and state plainly that settings will not carry over and the old app will not uninstall itself.
 
 ## Sources
 
@@ -133,3 +228,5 @@ The request lifecycle from DNS to database, every hosting model with 2026 price 
 - https://github.com/0xdarkmatter/claude-mods/blob/HEAD/skills/cloudflare-ops/SKILL.md — Workers script size limits 3 MB (free) / 10 MB (paid) gzipped (checked 2026-10-01)
 - https://github.com/workersphp/core/blob/HEAD/docs/research/02-workers-platform-limits.md — Workers platform limits, verified Aug 2026 (64 MB uncompressed ceiling)
 - https://developers.cloudflare.com/hyperdrive/ — Hyperdrive edge connection pooling for Postgres/MySQL from Workers
+- https://github.com/addyosmani/agent-skills — shipping-and-launch skill: staged rollout sequence and thresholds, error-budget release gate, feature-flag lifecycle, first-hour verification, rollback-plan template (MIT License; adapted, original wording)
+- https://github.com/GoogleChrome/modern-web-guidance — PWA guides on installing web apps (`<install>` element, `navigator.install()`) and migrating an installed app's origin (Apache License 2.0; adapted, original wording)

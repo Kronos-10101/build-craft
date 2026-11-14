@@ -86,6 +86,62 @@ Scope: how the *environment* (containers, dev shells, tool versions, builds, CI)
 - [ ] Polyglot tool versions in CI come from the committed `mise.toml` via the mise action; Python deps come from `uv sync --locked`; the buildx registry cache (`mode=max`) keeps Docker builds incremental.
 - [ ] Formatting/lint/secret-detection run as pre-commit hooks (`.pre-commit-config.yaml` with pinned hook revs, `pre-commit install` documented); CI re-runs the same hooks so contributors without local hooks can't bypass them.
 
+## CI/CD: gate order, the agent feedback loop, and pipeline speed
+
+The CI environment strategy above covers runners, pinning, and permissions. This section covers what the pipeline *does*: the order its gates run in, how its failures get fixed, who owns a red build, and how it is made fast. Runner, SHA-pinning, and matrix rules are not repeated here.
+
+### Fixed gate order, no skippable gates
+
+- [ ] Every change passes the gates in this fixed order, cheapest and fastest signal first: lint → types → unit tests → build → integration tests → e2e tests → security audit → bundle size. A later gate never runs as a substitute for an earlier one that was skipped.
+- [ ] No gate can be skipped, muted, or made advisory to get a change through. A failing lint is fixed in the code, the rule stays on; a failing test is fixed in the code or the test's own proven bug, the test is not skipped. Disabling the check is the one fix that is never available.
+- [ ] Shift left on purpose: a defect caught at lint costs minutes, the same defect caught in production costs hours, so checks belong as early in the order as their inputs allow.
+
+### The CI-failure → agent feedback loop
+
+- [ ] Named pattern, run it as a loop: CI fails → the exact failure output is copied out of the run → that output (not a summary of it) is fed to the agent with an instruction to fix and verify locally before pushing → agent fixes and pushes → CI runs again. Repeat until green; the loop, not a human relaying impressions, is the mechanism.
+- [ ] Route the fix by failure class: lint failure, run the linter's autofix and commit the result; type error, fix the type at the reported location; test failure, debug the failure on its evidence before editing; build error, inspect config and dependencies first.
+- [ ] A re-run with no change is not a loop iteration. Flaky-looking failures are investigated as failures; re-running until green trains everyone to ignore the signal the pipeline exists to send.
+
+### The over-10-minute ladder
+
+- [ ] A pipeline over 10 minutes gets optimized in impact order; do not jump down the ladder because a later rung is easier:
+  1. Cache the package-manager cache (the `setup-*` action's cache option, or `actions/cache` keyed on the lockfile hash). Cache that store, never `node_modules` itself.
+  2. Parallelize: split lint, typecheck, tests, and build into separate jobs that run concurrently instead of one serial job.
+  3. Add path filters so unrelated jobs skip (e2e does not run for a docs-only change).
+  4. Shard the test suite across a matrix of runners.
+  5. Demote the slowest tests off the critical path onto a schedule (nightly), keeping them running and reported, just not gating every PR.
+  6. Buy bigger runners, last, for genuinely CPU-heavy work.
+- [ ] Measure after each rung and stop when the pipeline is back under the bar; an optimization with no before/after number is a guess added to the config.
+
+### The Build Cop
+
+- [ ] One named role owns a green main: the Build Cop. When the build breaks, fixing it or reverting the breaking change is the cop's job, not the job of whoever's change broke it.
+- [ ] The point is the failure mode it prevents: a red build that sits while every contributor assumes someone else is fixing it, and further changes pile onto a broken base. The cop rotates; the ownership does not lapse.
+
+### Rollback workflow: inputs through `env:`, never into the script
+
+- [ ] A manual rollback workflow takes the target version as a `workflow_dispatch` input and passes it to the step through an `env:` mapping, with the script reading the quoted shell variable:
+
+```yaml
+name: Rollback
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to roll back to'
+        required: true
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Roll back deployment
+        env:
+          VERSION: ${{ inputs.version }}
+        run: npx vercel rollback "$VERSION"
+```
+
+- [ ] Never interpolate the input expression directly into the `run:` script. An interpolated value becomes script text before the shell sees it, so a crafted version string is arbitrary command execution in a workflow that holds deploy credentials; the `env:` route hands the shell a value, not code.
+
 ## Sources
 
 - https://github.com/juninmd/skills/blob/HEAD/.agents/skills/cloud-devops/references/dockerfile-standards.md
@@ -107,3 +163,4 @@ Scope: how the *environment* (containers, dev shells, tool versions, builds, CI)
 - https://github.com/sbomify/sbomify.com/blob/HEAD/content/posts/2026-01-29-what-is-a-dependency-in-software.md
 - https://github.com/ericboehs/claude-plugins/blob/HEAD/plugins/gh-actions-security/skills/gh-actions-security/SKILL.md
 - https://github.com/luongnv89/skills/blob/HEAD/skills/devops-pipeline/SKILL.md
+- https://github.com/addyosmani/agent-skills — ci-cd-and-automation skill: fixed gate order, CI-failure to agent feedback loop, over-10-minute optimization ladder, Build Cop role, rollback input passed through `env:` (MIT License; adapted, original wording)

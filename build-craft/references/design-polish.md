@@ -124,6 +124,30 @@ Scope: the verifiable craft system behind refined interfaces — typography, spa
 - [ ] Exits softer than enters: small fixed translateY (~4–8px), ease-out both directions; ~100ms stagger only for infrequent staged entrances (page-load lists), never on every interaction.
 - [ ] Motion reviewed at 10% speed before shipping — slow playback exposes jank and asymmetry invisible at full speed.
 
+## Modern CSS capabilities (2026 platform)
+
+Native platform features that replace utility hacks and JS measurement code. Each ships behind a fallback (see the last item); none is load-bearing for layout in unsupported browsers.
+
+- [ ] Intrinsic-size animation is native now: opt in once with `interpolate-size: allow-keywords` on `:root`, then transition `height`/`block-size` straight to `auto` (or `min-content`/`max-content`/`fit-content`) — accordions and expandable panels animate to their real content size.
+- [ ] The `max-height` hack and JS FLIP measuring for expand/collapse are retired by the rule above: no guessed `max-height: 999px` ceilings, no measure-in-JS-then-animate wrappers for simple disclosure motion.
+- [ ] Math on an intrinsic size uses `calc-size()`: `calc-size(auto, size + 2rem)` or a `clamp()` bound in the second argument; a plain keyword/length fallback declaration goes immediately before any `calc-size()` line.
+- [ ] `interpolate-size` is inherited: set `allow-keywords` on `:root` for app-wide opt-in, or scope it to one subtree when a legacy component still depends on keywords snapping instantly.
+- [ ] Basis-agnostic sizing math uses the `any` basis (`calc-size(any, size * 2)`), so one rule survives a basis change from `auto` to `fit-content` without a rewrite.
+- [ ] Position-driven styling without JS counters or `:nth-child` chains: `sibling-index()` and `sibling-count()` feed `calc()` directly (stagger delay `calc(sibling-index() * 60ms)`, progress fraction, per-item hue steps).
+- [ ] Repeated calculation logic lives in `@function` custom functions (`@function --shade(--c) { result: … }`) called like built-ins — one definition instead of the same `calc()`/`color-mix()` chain pasted across components.
+- [ ] At-rule support is feature-queried separately from property support: `@supports at-rule(@function)` / `at-rule(@container)` gate blocks that depend on the at-rule itself; a property-level `@supports` check says nothing about either.
+- [ ] Non-scroll clipping uses `overflow: clip` with `overflow-clip-margin` where overflow must never become scrollable: unlike `hidden`, `clip` forbids programmatic scrolling too, and the margin lets shadows or ink paint a set distance past the box before cutting.
+- [ ] `overflow-clip-margin` is sized for what actually overflows (focus outlines, drop shadows, italic overhang), in `px` or relative to the border box via the `border-box` keyword; a zero margin on text-heavy boxes clips glyphs.
+- [ ] Dynamic backgrounds get a guaranteed-contrast foreground from `contrast-color(var(--bg))` (returns black or white, whichever contrasts more) — brand-critical pairings still hand-verified, since the function offers only those two outcomes.
+- [ ] Scrollbars styled with the standard properties only: `scrollbar-color: <thumb> <track>` and `scrollbar-width: thin | auto | none` — no new `::-webkit-scrollbar` rules; `scrollbar-gutter` (above) still owns the layout-shift side.
+- [ ] Forced-colors mode owns the scrollbar: under `@media (forced-colors: active)`, custom `scrollbar-color` is dropped or remapped to system colors so the bar stays visible against the forced palette.
+- [ ] Text aligns to its glyphs, not its font box: `text-box-trim: trim-both` with `text-box-edge: cap alphabetic` strips the half-leading above cap height and below the baseline — buttons, badges, and icon-plus-label rows center optically with no negative-margin fixes.
+- [ ] Component variants driven by design tokens use container style queries: set `--variant: accent` on the wrapper and branch inside with `@container style(--variant: accent)` — variant state travels as a token, not as extra modifier classes or JS-toggled attributes.
+- [ ] Style-query variants compose with the token tiers above: the query reads a semantic/component token, so a theme remap re-skins the variant without touching component CSS.
+- [ ] The default variant is the un-queried base style: style queries only override, so a browser without `@container style()` support renders the default variant intact instead of an unstyled component.
+- [ ] `scrollbar-width: none` is used only where a replacement scroll affordance exists (progress indicator, edge fades, drag); hiding the bar with no substitute fails discoverability on long surfaces.
+- [ ] Every capability in this section ships as progressive enhancement: unsupported browsers get the fallback declaration or the un-animated end state, never a collapsed or invisible component.
+
 ## Loading states
 
 - [ ] <300ms → nothing (or just the press state); 300ms–2s → **skeleton** shaped like the layout with reserved space (blocks layout shift); >2s → determinate progress + contextual message.
@@ -191,3 +215,4 @@ Pull from these vetted, high-taste sources instead of generic AI templates. When
 - https://github.com/Jakubantalik/transitions.dev — motion-token vocabulary (`skills/transitions-dev/_root.css`: durations, easings, distances) and the tokenize-ad-hoc-motion ("refine") practice (checked 2026-10-02)
 - https://github.com/jakubkrehel/skills — `better-ui` skill (MIT): concentric radius, optical alignment, interruptible animations, stagger/exit discipline, theme-switch transition suppression, 10%-speed review (checked 2026-10-02)
 - https://github.com/pbakaus/impeccable — the repo's own claimed spec is "1 skill, 24 commands, 61 deterministic detector rules" (Paul Bakaus, Apache 2.0, ~73.5k stars, checked 2026-10-02)
+- GoogleChrome/modern-web-guidance (Apache-2.0) — "Modern CSS capabilities" section: guides on animating/calculating with intrinsic sizes, dynamic sibling styling, at-rule support conditionals, overflow clipping control, contrast-color, precise text alignment, scrollbar styling and forced-colors adaptation, design-token reactivity via container style queries (checked 2026-11-15)

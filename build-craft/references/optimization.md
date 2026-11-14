@@ -105,6 +105,32 @@ Stack-general performance playbook: measure before changing, optimize algorithms
 - [ ] Post-deploy watch: p95/p99 latency, error rate, and key resource metrics reviewed after every release touching a hot path; burn-rate alerts on latency/error SLOs.
 - [ ] The capacity ceiling and the last soak result recorded somewhere durable (runbook, dashboard) — capacity planning starts from measured numbers, not vibes.
 
+## Perf verdict discipline — keep, revert, or it did not happen
+
+- [ ] Re-measure under identical conditions: same command, same data, same cache state, same budget. A cold-cache baseline against a warm-cache result measures the cache, not the change.
+- [ ] One change at a time. Bundled changes produce one number with no attribution; if they must ship together, measure each in isolation first.
+- [ ] The delta must beat run-to-run variance: repeat the measurement and compare against the observed spread. A 3% delta inside ±5% noise is noise, not a gain.
+- [ ] Apply the verdict table strictly:
+
+| Result vs baseline | Verdict |
+|---|---|
+| Past the threshold, tests green | Keep, with before/after numbers in the commit |
+| Within noise | Revert |
+| Worse | Revert |
+| Improved, tests red | Revert |
+
+- [ ] Neutral is a revert, not a keep: kept code is maintained forever, so a change that bought nothing has a negative return. Correctness gates the metric too; a win that drops needed work is a regression.
+- [ ] Keep a permanent attempts ledger (idea, baseline → result, verdict, why) covering reverted attempts as well as kept ones. Reverted work leaves no trace in git, and an unrecorded dead idea gets retried next quarter.
+- [ ] Wire regression budgets into CI on the metric that justified the work (bundle size, p95, the primary user-facing metric), with medians or repeated runs so normal variance does not make the gate flaky.
+
+## Experiment and benchmark design
+
+- [ ] Count independent units, not runs: repeated runs on one machine, one prompt set, or one dataset are repeated measurements of the same unit (pseudoreplication). Size claims at the level of the independent unit, or the confidence is fiction.
+- [ ] Block on nuisance factors you cannot interleave away (machine, time of day, thermal and load state, data shard), and randomize run order within blocks so drift lands on all arms equally.
+- [ ] One-factor-at-a-time tuning misses interactions: when 4–5 or more config factors are in play, screen them with a factorial or fractional-factorial design before fine-tuning the survivors.
+- [ ] State the minimum detectable effect you care about, and the runs needed to resolve it at the observed variance, before running. Report a sensitivity range (runs needed across plausible variances), never a single magic n.
+- [ ] Never compute post-hoc observed power from the effect you just measured; it is a restatement of the p-value, not new evidence.
+
 ## Sources
 
 - https://github.com/mstange/samply/blob/HEAD/README.md
@@ -129,3 +155,5 @@ Stack-general performance playbook: measure before changing, optimize algorithms
 - https://tech-insider.org/k6-vs-jmeter-vs-gatling-2026/
 - https://github.com/weselben/rooforge/blob/HEAD/skills/12-factor-app/SKILL.md
 - https://github.com/wolfpld/tracy/blob/HEAD/profiler/src/achievements/InstrumentFrames.md
+- Perf verdict discipline: addyosmani/agent-skills, performance-optimization steps 4–5 (MIT) — https://github.com/addyosmani/agent-skills
+- Experiment design: K-Dense-AI scientific-agent-skills (MIT) — https://github.com/K-Dense-AI/scientific-agent-skills

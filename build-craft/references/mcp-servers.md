@@ -104,6 +104,18 @@ Concrete rules for building correct, secure, testable MCP servers against the cu
 - [ ] Least-privilege tools: each tool can only do its own job (a weather tool cannot read files); destructive tools gated behind explicit confirmation; clients show tool inputs to the user before calling to prevent silent exfiltration.
 - [ ] Tool definitions pinned or hashed by clients where supported, so a server update cannot silently rug-pull a tool's behavior.
 
+## WebMCP — the client-side counterpart (Early Preview)
+
+- [ ] Status first: WebMCP is **Early Preview**, Chromium 146+ only, behind the `#enable-webmcp-testing` flag, on a draft community specification. Nothing here is production-stable; feature-detect `document.modelContext` and keep the page fully usable without it.
+- [ ] WebMCP is not a server transport: the page itself is the tool registry, running entirely in the tab. It exposes Tools only; Resources and Prompts do not exist here, and none of the server rules above (stdio, Streamable HTTP, OAuth) apply.
+- [ ] Imperative tools use `document.modelContext.registerTool({ name, description, inputSchema, execute, annotations })`. Descriptions say what the tool does and when to use it; types, enums, and defaults live in `inputSchema`, not in prose. Validate inside `execute` anyway: the browser does not enforce the schema or apply defaults.
+- [ ] Unregister with an `AbortSignal`, never a removal call: pass `{ signal }` from an `AbortController` at registration and `abort()` it on route change or unmount. Aborting stops discovery only; long-running `execute` work must also honour its own per-execution signal.
+- [ ] Cross-frame exposure is opt-in both ways via `exposedTo: [origins]` at registration; list only trustworthy HTTPS (or localhost) origins, and leave it unset for tools that should stay private to the registering document.
+- [ ] Set `annotations: { readOnlyHint: true }` on tools that do not mutate state so agents and browsers can treat them as safe to call without confirmation. Never mark a mutating tool read-only.
+- [ ] Declarative tools need no JavaScript: `<form toolname="..." tooldescription="..." toolautosubmit>` turns a standard form into a tool, with the browser building the schema from its controls. Add `toolautosubmit` only for read-only or easily reversible submissions; omit it for destructive, financial, or account-changing forms so the user reviews first. Unsupported browsers ignore the attributes and the form still works.
+- [ ] In frameworks, register through the hook, not the raw API: React and Vue use the `use-webmcp-tool` hook (`useWebMCP`); Angular uses its experimental WebMCP providers. Components never call `registerTool()` directly.
+- [ ] Recoverable failures are returned as structured values from `execute`, not thrown: a thrown error reaches the agent as a generic failure with no message, while a returned `{ error, ... }` payload lets it self-correct.
+
 ## Sources
 
 - https://modelcontextprotocol.io/specification/2026-07-28/changelog
@@ -112,3 +124,4 @@ Concrete rules for building correct, secure, testable MCP servers against the cu
 - https://github.com/uwuclxdy/agenticat/blob/HEAD/skills/mcp-stateless/references/sdks.md
 - https://github.com/mitre/mcp/blob/HEAD/docs/fastmcp-upgrade-plan.md
 - https://github.com/redis/mcp-redis/issues/163
+- WebMCP: GoogleChrome/modern-web-guidance, webmcp guides (Apache-2.0) — https://github.com/GoogleChrome/modern-web-guidance

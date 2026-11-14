@@ -21,6 +21,7 @@ The skill lives in [`build-craft/`](build-craft/) and follows the spec layout (`
 | `libraries.md` | Best library picks in detail — Python, JS/TS, React ecosystem, C/C++, CSS, databases, auth/security, observability, infra — plus default stack picks |
 | `build-environments.md` | Docker, devcontainers, Nix, uv/conda, version managers, reproducible builds, dev/prod parity |
 | `web-frontend.md` | Semantic HTML, WCAG 2.2 AA, Core Web Vitals, responsive, SEO, assets, no-JS fallbacks |
+| `browser-extensions.md` | Chrome extensions, MV3 only: ephemeral service workers, sandboxed execution, offscreen documents, permissions/activeTab, side panel, Web Store publishing |
 | `backend-api.md` | REST conventions, validation, OAuth2/JWT, rate limiting, pagination, idempotency, logging, health checks, 12-factor |
 | `system-design.md` | Scalability, CAP trade-offs, load balancing, monolith vs microservices, resilience, observability |
 | `system-design-deep.md` | HLD vs LLD: requirements, capacity estimation, SOLID, design patterns, concurrency models, whiteboard flow |
@@ -30,6 +31,7 @@ The skill lives in [`build-craft/`](build-craft/) and follows the spec layout (`
 | `security.md` | OWASP Top 10:2025, auth (Argon2id/NIST 800-63B), secrets, supply chain/SBOM, TLS, security headers, least privilege |
 | `offensive-security.md` | Attacker perspective: how SQLi/XSS/SSRF/RCE/phishing/privesc work and the concrete prevention for each |
 | `testing.md` | Test pyramid, unit/integration/contract/e2e, property-based, mutation, fuzzing, flaky-test discipline, CI strategy |
+| `quality-bar.md` | Per-project `CONSTRAINTS.md` contract: numeric thresholds with verdict commands, the floor, ratchets, exceptions with expiry, floor-guard diff review |
 | `optimization.md` | Profile-first discipline, Big-O review, caching strategy, query optimization, frontend budgets, load testing, measurable targets |
 | `hosting.md` | How servers work, hosting types and pricing models, how to choose, AI/GPU hosting |
 | `design-polish.md` | Typography, 8pt spacing, color/contrast, hierarchy, micro-interactions, empty/error/loading states, design tokens |
@@ -44,6 +46,7 @@ The skill lives in [`build-craft/`](build-craft/) and follows the spec layout (`
 | `project-structure.md` | Folder layouts, naming, branches, Conventional Commits, `.env` handling, lockfiles, changelogs |
 | `audit-methodology.md` | Scoping, order of operations (security → correctness → performance → maintainability → polish), severity levels, report format |
 | `planning-grill.md` | Task planning and allocation, implementation plan template, the Grill Me question bank and protocol |
+| `review-loop.md` | Per-task fresh-reviewer gate (BASE..HEAD review package, two verdicts), bounded fix loop, claim-time verification gate |
 | `writing-craft.md` | Clear technical prose for README/docs/reports/PR descriptions — cut AI slop, keep voice and facts (adapted from [unslop](https://github.com/theclaymethod/unslop), MIT) |
 | `skill-sources.md` | Where to find skills: skills.sh, anthropics/skills, awesome lists, install methods |
 | `skill-vetting.md` | Security checklist before trusting a third-party skill (prompt-injection aware) |
@@ -140,6 +143,17 @@ CI usage — fail the build on blockers, or fail on anything at all:
 ```
 
 Like `audit-repo.sh`, this is a triage aid: the patterns are heuristic (a hardcoded key can be a test fixture, a `console.log` can be intentional) — review every hit against the domain checklists in `references/` before treating it as a verdict.
+
+## Credits
+
+Method merged from these skill collections, each credited in the chapters that use it:
+
+- [obra/superpowers](https://github.com/obra/superpowers) (MIT) — review loop, debugging method, TDD enforcement, plan format, worktrees, skill-writing discipline
+- [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) (MIT) — quality bar, doubt-driven review, elicitation, observability, idempotency, launch/rollout, ADRs
+- [GoogleChrome/modern-web-guidance](https://github.com/googlechrome/modern-web-guidance) (Apache-2.0) — modern web platform APIs, passkeys, WebCrypto/SRI, Temporal, Web Components, browser extensions, built-in AI, WebMCP
+- [google/skills](https://github.com/google/skills) (Apache-2.0) — port-verification method, eval flywheel, catalog-router retrieval rules
+- [K-Dense-AI/scientific-agent-skills](https://github.com/K-Dense-AI/scientific-agent-skills) (MIT) — data-work leakage rules, experiment design, comparison claims
+- [VoltAgent/awesome-agent-skills](https://github.com/VoltAgent/awesome-agent-skills) (MIT) — the publisher map in `skill-sources.md`
 
 ## License
 

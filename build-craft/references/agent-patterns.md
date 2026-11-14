@@ -53,6 +53,30 @@ Named reasoning patterns, multi-agent topologies, 2026 dynamic workflow patterns
 - [ ] Subagent outputs are validated against a schema at the barrier before synthesis — a malformed fan-out result fails loudly instead of poisoning the merge.
 - [ ] Model routing per subagent is deliberate: cheap/fast model for fan-out classification and simple checks, flagship model only for hard reasoning and synthesis.
 
+## Model-tier economics for dispatched work
+
+Which model runs a dispatched task is a cost decision with a quality floor. Assign the tier per role, in writing, at dispatch time.
+
+- [ ] **Cheapest tier, transcription work only:** the plan text contains the complete code to write, so the job is transcription plus testing. Single-file mechanical fixes with a complete spec sit in the same tier.
+- [ ] **Mid-tier floor:** reviewers, and implementers working from prose descriptions rather than finished code. Below this floor, judgment tasks underperform in ways that surface late, at review or after merge.
+- [ ] **Most capable tier, reserved:** architecture, design judgment, broad codebase understanding, and the final whole-branch review. The final review is dispatched on the most capable model available, not left on the session default.
+- [ ] Middle band by signal: multi-file coordination, pattern matching across a codebase, and debugging take the standard tier; a stuck implementer escalates at least one tier above the model that got stuck, not a retry on the same tier.
+- [ ] **Always name the model explicitly in a dispatch.** An omitted model silently inherits the session's model, which is often the most capable and most expensive; every saving this section plans for evaporates without a dispatch ever recording the choice.
+- [ ] **Turn count beats token price:** wall-clock and context cost scale with the number of turns a subagent takes, and the cheapest models routinely take 2-3× the turns on multi-step work. A cheap model that needs three passes costs more overall than a mid-tier model that finishes in one.
+
+## Execution context hygiene for dispatched work
+
+Everything pasted into a dispatch prompt, and everything a subagent prints back, stays resident in the coordinator's context for the rest of the session and is re-read on every later turn. Files are the handover mechanism; prompts carry paths, not payloads.
+
+- [ ] **Hand artifacts over as files, never pasted into prompts:** task briefs, diffs, review packages, and reports all move by file path. A real dispatch hit 42k characters, of which 99% was pasted history; the fresh subagent needed none of it.
+- [ ] A dispatch prompt describes one task, not the session's history: one line on where the task fits, the brief path, the interfaces and decisions from earlier tasks that the brief cannot know, the resolution of any ambiguity in the brief, and the report-file path. Accumulated prior-task summaries stay out.
+- [ ] **The implementer's full report goes to a report file.** What returns to the coordinator is only: status, commits, a one-line test summary, and concerns. The detail stays on disk, readable on demand, instead of resident in context.
+- [ ] **Redirect long command output to a file and read the tail.** Test runs, build logs, and diff generation write to a uniquely named file; the coordinator reads the summary lines it needs and the full output never enters its context. The reviewer likewise receives the diff as one file and reads it in one call.
+- [ ] **Read the task brief, not the whole plan, per task.** Exact values (numbers, signatures, test cases) live in the brief alone; making a subagent read the whole plan spends its context on tasks it will never run.
+- [ ] **Never dispatch implementation subagents in parallel.** Parallel implementers working the same tree conflict; review and verification fan-out is parallel-safe, implementation is not.
+- [ ] **An implementer must never spawn its own reviewer.** Review arrives from the coordinator after the report; a reviewer the worker spawned duplicates the task review seat exactly, at full extra cost. Flag it as a defect in the run, never credit it as added rigor.
+- [ ] The same no-subagents rule covers helpers generally: the implementer's contract is implement, test, commit, self-review, report. Any seat beyond that belongs to the coordinator's dispatch plan.
+
 ## Optimizing an agent — the levers
 
 - [ ] Fewer, better tools: tool count cut to the minimum covering the task; each tool's description disambiguates it from the others; related operations consolidated into single tools.
@@ -107,3 +131,5 @@ Named reasoning patterns, multi-agent topologies, 2026 dynamic workflow patterns
 - https://github.com/kevxn97/fieldnote/blob/HEAD/vault/wiki/sources/a-practical-guide-to-building-agents.md
 - https://github.com/sticklane/claude/blob/HEAD/docs/external-playbooks.md
 - https://github.com/joseparrenogarcia/newsletter-engine/blob/HEAD/posts/ai-roles-to-hire/research2.md
+- obra/superpowers (MIT) — subagent-driven-development (model selection, context hygiene), requesting-code-review: https://github.com/obra/superpowers
+- addyosmani/agent-skills (MIT) — code-review-and-quality: https://github.com/addyosmani/agent-skills
