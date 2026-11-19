@@ -19,6 +19,14 @@ One sentence: what done looks like.
 
 - `path/to/file` — what changes and why.
 
+## Target
+
+EXAMPLE: /path/to/target-repo (or: none)
+
+## Consulted
+
+- EXAMPLE: security.md
+
 ## Risks
 
 - What could go wrong during the build; how likely, how bad.

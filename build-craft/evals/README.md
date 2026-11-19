@@ -174,3 +174,103 @@ authoring guidance.
   ```bash
   python3 -m json.tool evals.json > /dev/null
   ```
+
+## Trigger evals
+
+`trigger-evals.json` tests a different failure mode from `evals.json`:
+not whether the skill's workflow is followed once it runs, but whether
+the skill **fires at all** on the prompts it should fire on — and stays
+out of the way on the prompts it should not. Each record is:
+
+- `id`: stable identifier (`trigger-01`, `trigger-02`, ...)
+- `name`: the phrasing type (direct build request, audit request,
+  typo fix, git how-to, ...)
+- `prompt`: the user message, sent verbatim
+- `expected`: `should-fire` or `should-not-fire`
+- `skills`: `["build-craft"]`
+
+### Protocol
+
+Run every prompt twice, in **fresh sessions**, changing only the
+skill's availability:
+
+1. **Skill available.** Start a fresh agent with `build-craft` listed
+   and available for normal triggering. Do **not** name the skill in
+   the prompt, paste its contents, or hint that it exists — a prompt
+   that names the skill tests invocation, not triggering.
+2. **Skill off (control).** Start a separate fresh agent with
+   `build-craft` not installed / not listed. The workflow cannot fire
+   here; this arm confirms the prompt itself does not force the
+   workflow's shape, and gives the no-skill behaviour for comparison.
+
+Hold everything else constant: the exact same `prompt` text, the same
+model and settings, no staged files beyond an ordinary workspace, and
+no follow-up prompts or hints during the run.
+
+Record one binary outcome per run:
+
+- **Fire**: the agent invoked / routed into the skill's workflow.
+  Observable signs: it reads `SKILL.md`, scaffolds a run directory
+  with `node scripts/craft-gate.mjs --init`, reads routed reference
+  chapters, or starts the plan/grill phases before answering.
+- **No-fire**: the agent answered or acted directly, without entering
+  the skill's workflow.
+
+### Scoring
+
+Score the two expectation classes **separately** — never pool them
+into one number:
+
+- **Should-fire hit rate** = prompts with `expected: should-fire`
+  that fired (skill-available arm) / total should-fire prompts.
+- **Should-not-fire false-positive rate** = prompts with
+  `expected: should-not-fire` that fired anyway (skill-available arm)
+  / total should-not-fire prompts. Lower is better; the target is 0.
+
+A miss in either direction is a description problem, not a workflow
+problem: a should-fire prompt that does not fire means the skill's
+description does not cover that phrasing; a should-not-fire prompt
+that fires means the description is over-broad. Fix the description,
+then re-run the whole trigger set — a wording change that fixes one
+prompt can silently break another.
+
+Record trigger runs alongside the behavioural runs, for example
+`results/<YYYY-MM-DD>/trigger-<arm>-<model>.md`, with one row per
+prompt: id, expected, observed (fire / no-fire), and the evidence for
+the call (the first workflow artifact or command observed, or the
+direct answer given).
+
+## pass^k for gate discipline
+
+A single with-skill pass on a scenario proves the behaviour is
+possible, not that it is reliable. For the gate-discipline behaviours
+— the ones this skill exists to make mechanical — grade with
+**pass^k**, per Anthropic's eval guidance: run the **same scenario k
+times** (fresh agent, fresh workspace, identical setup each time) and
+require the behaviour to hold in **all k runs**.
+
+Apply pass^k to the gate-discipline entries of a scenario's
+`expected_behavior`, in particular scenario 5 (utilization):
+
+- `task.md` `## Consulted` recorded, and recorded **before** code is
+  written
+- gates run in order p1 → p2 → p3 → p4, with `gate-log.md` PASS lines
+  to prove it
+- required audits recorded in `report.md` `## Audits run` with
+  verdicts — including an honest `verdict: cannot verify — <reason>`
+  where an audit could not run, never a fabricated pass
+- `decisions.md` carries its `Approval:` line
+
+Report the result as pass^k directly, for example "scenario 5,
+gate-discipline entries: pass^5 (5/5 runs held every entry)". If any
+one run fails any one gate-discipline entry, pass^k fails for that
+scenario at that k — the run's verbatim rationalization for the lapse
+is recorded like any other failure, and the fix belongs in the skill's
+wording or gates, not in a re-roll hoping for a luckier run.
+Consistency across repetitions is the metric; a single lucky pass is
+not.
+
+Grade **outcomes and artifacts, not transcripts**: the files on disk
+(`task.md`, `gate-log.md`, `report.md`, `decisions.md`), the commands'
+exit codes, and the formats actually followed. What the agent says it
+did in chat is a claim; the artifacts are the evidence.

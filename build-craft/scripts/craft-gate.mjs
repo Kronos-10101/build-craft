@@ -26,15 +26,55 @@
  * GATE PASS: every phase has at least one content check that fails on
  * example-only content. Real prose using lowercase "example" is unaffected;
  * avoid literal <...> tokens in checked lines.
+ *
+ * PROVENANCE & CHAINING: task.md records the routed reference chapters in
+ * "## Consulted" (p1 verifies each basename exists in references/ and that
+ * security.md accompanies the web/backend chapters). Phases chain through
+ * <run-dir>/gate-log.md: every successful phase appends its own
+ * "pN PASS <ISO timestamp>" line (plus CLI flags, plus p4 "unverified:"
+ * audit names), and p2/p3/p4 each require the previous phase's line.
+ * P4 attestations are DERIVED, not flagged: the checklist attestation runs
+ * against every chapter in "## Consulted" and the critical-path attestation
+ * always runs; --checklists/--critical flags only ADD files/emphasis.
+ * P4 also derives the required "## Audits run" rows in report.md from the
+ * consulted chapters, the planned file changes, and the target repo.
  */
-import { readFileSync, copyFileSync, mkdirSync, readdirSync } from 'node:fs';
+import {
+  readFileSync, copyFileSync, mkdirSync, readdirSync,
+  existsSync, appendFileSync, writeFileSync,
+} from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const TEMPLATE_FILES = [
   'task.md', 'tasks.md', 'decisions.md', 'grill.md',
-  'design.md', 'architecture.md', 'report.md', 'progress.md',
+  'design.md', 'architecture.md', 'report.md', 'progress.md', 'review.md',
+];
+/** Embedded fallback for templates/review.md, used only when the templates
+ *  dir has no review.md yet. Must stay byte-equivalent in structure to the
+ *  canonical template (same headers and placeholder lines). */
+const REVIEW_TEMPLATE = `# Review
+
+BASE: EXAMPLE <base ref>
+HEAD: EXAMPLE <head ref>
+
+Spec verdict: EXAMPLE <one-line verdict>
+Quality verdict: EXAMPLE <one-line verdict>
+
+## Declined to judge
+
+- EXAMPLE: none
+
+## Fix rounds
+
+- EXAMPLE: round 1 — <fixes>
+`;
+/** Chapters that handle attacker-controlled input or shipped surface area:
+ *  consulting any of them without security.md means the security checklist
+ *  was never routed, so p1 fails until it is added. */
+const SECURITY_TRIGGER_CHAPTERS = [
+  'web-frontend.md', 'react-nextjs.md', 'backend-api.md', 'browser-extensions.md',
 ];
 const P1_HEADERS = [
   'Goal', 'Non-goals', 'Decisions', 'File changes',
@@ -50,16 +90,21 @@ function usage(exit = 2) {
   node scripts/craft-gate.mjs --init <dir> [--skill-root <path>]
   node scripts/craft-gate.mjs --phase <p1|p2|p3|p4> [--design] [--strict] [--checklists f1,f2] [--critical] --dir <dir> [--skill-root <path>]
 
-  --init <dir>        create <dir> and copy the 8 template files into it
-  --phase <p1..p4>    run phase gate checks against --dir
+  --init <dir>        create <dir>, copy the template files into it (incl. review.md),
+                      scaffold any missing canonical sections, and create an empty gate-log.md
+  --phase <p1..p4>    run phase gate checks against --dir; on success append
+                      "pN PASS <ISO timestamp>" to <dir>/gate-log.md
   --design            (p2 only) also enforce design.md direction/decision checks
   --strict            (p4 only) additionally fail on any /fail/ line not negated by "no ... fail"
-  --checklists f1,f2  (p4 only) files (relative to skill root, or references/<name>) whose
+  --checklists f1,f2  (p4 only) ADD files (relative to skill root, or references/<name>) whose
                       "- [ ]" items must be attested in report.md "## Checklist attestation"
-                      as "<basename>: <p> pass, <w> waived" with p+w == item count
-  --critical          (p4 only) require report.md "## Critical-path" attesting every MUST item
-                      in references/critical-path.md: "all <N> reviewed" (exact count), "no waivers",
-                      or per-item waiver lines each with a reason (>= 30 chars)
+                      as "<basename>: <p> pass, <w> waived" with p+w == item count.
+                      The attestation set is derived by default from task.md "## Consulted";
+                      this flag only adds files, it never subsets the derived set.
+  --critical          (p4 only) the report.md "## Critical-path" attestation of every MUST item
+                      in references/critical-path.md ("all <N> reviewed" (exact count), "no waivers",
+                      or per-item waiver lines each with a reason (>= 30 chars)) now runs BY DEFAULT;
+                      this flag is accepted for compatibility and recorded in the gate log
   --dir <dir>         working directory holding the phase files
   --skill-root <path> override skill root (default: parent of this script's directory)`;
   console.error(msg);
@@ -230,6 +275,71 @@ function decisionBlocks(text) {
   return idx.map((s, i) => text.slice(s, idx[i + 1] ?? text.length));
 }
 
+/** True when a raw (unstripped) line is template placeholder content:
+ *  it carries the EXAMPLE token or an <angle-bracket> token. The shared
+ *  format contract states such lines never count as real content. */
+function isPlaceholderLine(line) {
+  return EXAMPLE_RE.test(line) || PLACEHOLDER_RE.test(line);
+}
+
+/** Parse task.md "## Consulted" per the format contract: one routed chapter
+ *  per line as "- <basename>.md". Returns null when the section is absent,
+ *  otherwise the array of basenames from lines matching the contract regex
+ *  (placeholder lines never match in practice — "- EXAMPLE: x.md" is not a
+ *  bare basename line — and are excluded explicitly as well). */
+function parseConsulted(rawTask) {
+  if (rawTask === null) return null;
+  const sec = sectionAfter(rawTask, /^##\s*consulted\s*$/im, /^##\s/m);
+  if (sec === null) return null;
+  const entries = [];
+  for (const line of sec.split('\n').slice(1)) {
+    if (isPlaceholderLine(line)) continue;
+    const m = line.trim().match(/^-\s+([A-Za-z0-9._-]+\.md)\s*$/);
+    if (m) entries.push(m[1]);
+  }
+  return entries;
+}
+
+/** Parse task.md "## Target" per the format contract: the section's single
+ *  content line is the target repo path, or "none" for plan-only runs.
+ *  Returns { present, target } — target is null when the section holds only
+ *  placeholder/empty lines. */
+function parseTarget(rawTask) {
+  if (rawTask === null) return { present: false, target: null };
+  const sec = sectionAfter(rawTask, /^##\s*target\s*$/im, /^##\s/m);
+  if (sec === null) return { present: false, target: null };
+  const content = sec.split('\n').slice(1)
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0 && !isPlaceholderLine(l));
+  return { present: true, target: content.length ? content[0] : null };
+}
+
+/** Phase chaining: gate-log.md must already hold a "<prev> PASS" line,
+ *  appended by the gate itself on that phase's successful run. */
+function checkGateLog(dir, phase, prev) {
+  const name = `${phase}:gate-log.md records "${prev} PASS" (phase chaining)`;
+  const raw = readQuiet(path.join(dir, 'gate-log.md'));
+  const ok = raw !== null && new RegExp(`^${prev} PASS\\b`, 'm').test(raw);
+  return check(
+    name,
+    ok,
+    ok
+      ? `found a "${prev} PASS" line in gate-log.md`
+      : `no "${prev} PASS" line in gate-log.md — run the ${prev} gate successfully first `
+        + `(node scripts/craft-gate.mjs --phase ${prev} --dir <run-dir>); the gate appends the line itself on success`,
+  );
+}
+
+/** Split design.md into blocks, one per "### direction" header line
+ *  (mirrors decisionBlocks() for decisions.md). */
+function directionBlocks(text) {
+  const re = /^###\s*direction.*$/gim;
+  const idx = [];
+  let m;
+  while ((m = re.exec(text)) !== null) idx.push(m.index);
+  return idx.map((s, i) => text.slice(s, idx[i + 1] ?? text.length));
+}
+
 /** Detail strings quote offending lines truncated at 60 chars (fragments) or
  *  120 chars (full lines): enough text to locate the problem in the source
  *  file, short enough that a failing gate stays readable on one screen. */
@@ -241,7 +351,7 @@ function check(name, ok, detail) {
 // phase checks — each returns an array of check results
 // ---------------------------------------------------------------------------
 
-function checksP1(dir) {
+function checksP1(dir, skillRoot) {
   const out = [];
   const raw = readQuiet(path.join(dir, 'task.md'));
   const task = raw === null ? null : stripPlaceholders(raw);
@@ -262,6 +372,54 @@ function checksP1(dir) {
       n >= 1 ? `found ${n}` : 'no open checkbox line with a real (non-placeholder) "done when" condition',
     ));
   }
+  // Consulted: which reference chapters were routed is provenance, not
+  // decoration — p4 derives its attestation set from this list.
+  const consulted = raw === null ? null : parseConsulted(raw);
+  if (raw === null) {
+    out.push(check('p1:task.md "## Consulted" lists >= 1 routed chapter', false, 'file missing: task.md — run --init <dir> to scaffold it from templates/, then fill it in'));
+    out.push(check('p1:task.md "## Target" has a non-placeholder target line', false, 'file missing: task.md — run --init <dir> to scaffold it from templates/, then fill it in'));
+  } else {
+    out.push(check(
+      'p1:task.md "## Consulted" lists >= 1 routed chapter',
+      consulted !== null && consulted.length >= 1,
+      consulted === null
+        ? '"## Consulted" section not found in task.md — add the section and list one routed reference chapter per line, e.g. "- security.md"'
+        : (consulted.length >= 1
+          ? `found ${consulted.length}: ${consulted.join(', ')}`
+          : '"## Consulted" has no valid entry — add one routed reference chapter per line as "- <basename>.md" (e.g. "- security.md"); EXAMPLE/placeholder lines do not count'),
+    ));
+    if (consulted !== null && consulted.length >= 1) {
+      let refFiles = new Set();
+      try { refFiles = new Set(readdirSync(path.join(skillRoot, 'references')).filter((f) => f.toLowerCase().endsWith('.md'))); } catch { /* empty set: every entry reports missing below */ }
+      const missing = consulted.filter((c) => !refFiles.has(c));
+      out.push(check(
+        'p1:task.md "## Consulted" chapters exist in references/',
+        missing.length === 0,
+        missing.length === 0
+          ? `all ${consulted.length} consulted chapter(s) exist in references/`
+          : `not found in references/: ${missing.join(', ')} — fix the basename in "## Consulted" to a chapter that exists in the skill's references/ directory`,
+      ));
+      const triggers = consulted.filter((c) => SECURITY_TRIGGER_CHAPTERS.includes(c));
+      const needsSecurity = triggers.length > 0 && !consulted.includes('security.md');
+      out.push(check(
+        'p1:task.md "## Consulted" includes security.md alongside web/backend chapters',
+        !needsSecurity,
+        needsSecurity
+          ? `${triggers.join(', ')} consulted without security.md — add a "- security.md" line to "## Consulted" in task.md`
+          : (triggers.length ? 'security.md is consulted alongside the web/backend chapter(s)' : 'no web/backend chapter consulted, security.md not required'),
+      ));
+    }
+    const tgt = parseTarget(raw);
+    out.push(check(
+      'p1:task.md "## Target" has a non-placeholder target line',
+      tgt.present && tgt.target !== null,
+      !tgt.present
+        ? '"## Target" section not found in task.md — add the section with a single content line: the target repo path, or "none" for a plan-only run'
+        : (tgt.target !== null
+          ? `target: ${tgt.target}`
+          : '"## Target" has no content line — add a single line under "## Target" with the target repo path, or "none" for a plan-only run (the EXAMPLE line does not count)'),
+    ));
+  }
   return out;
 }
 
@@ -279,13 +437,29 @@ function refUrlSet(skillRoot) {
 
 function checksP2(dir, skillRoot, withDesign) {
   const out = [];
+  out.push(checkGateLog(dir, 'p2', 'p1'));
   const rawDec = readQuiet(path.join(dir, 'decisions.md'));
   const dec = rawDec === null ? null : stripPlaceholders(rawDec);
   if (dec === null) {
     out.push(check('p2:decisions.md has >= 2 "## D<n>" entries', false, 'file missing: decisions.md — run --init <dir> to scaffold it from templates/, then record the phase decisions'));
     out.push(check('p2:decisions.md blocks have "options considered"+"why"+"sources"', false, 'file missing: decisions.md — run --init <dir> to scaffold it from templates/, then record the phase decisions'));
     out.push(check('p2:decisions.md URL also in references/*.md', false, 'file missing: decisions.md — run --init <dir> to scaffold it from templates/, then record the phase decisions'));
+    out.push(check('p2:decisions.md has an "Approval:" line', false, 'file missing: decisions.md — run --init <dir> to scaffold it from templates/, then record the phase decisions'));
   } else {
+    // Approval provenance: one non-placeholder "Approval:" line anywhere in
+    // decisions.md — either who approved and when, or the exact sanctioned
+    // not-required form for small, reversible work.
+    const approvalLines = rawDec.split('\n').filter((l) => {
+      const m = l.trim().match(/^Approval:\s*(.+)$/);
+      return m !== null && !isPlaceholderLine(l) && m[1].trim().length > 0;
+    });
+    out.push(check(
+      'p2:decisions.md has an "Approval:" line',
+      approvalLines.length >= 1,
+      approvalLines.length >= 1
+        ? `found: "${approvalLines[0].trim().slice(0, 120)}"`
+        : 'no non-placeholder "Approval:" line in decisions.md — add "Approval: <name/date>" or "Approval: not required — small and reversible" (the EXAMPLE line does not count)',
+    ));
     const blocks = decisionBlocks(dec);
     // >= 2 entries (checked next): one decision proves no alternatives were weighed; two is the smallest count that proves a choice happened.
     out.push(check('p2:decisions.md has >= 2 "## D<n>" entries', blocks.length >= 2, `found ${blocks.length} substantive, need >= 2`));
@@ -431,43 +605,248 @@ function checksP2(dir, skillRoot, withDesign) {
     if (design === null) {
       out.push(check('p2:design.md has >= 2 "### direction" sections', false, 'file missing: design.md — create it from templates/design.md (this check runs only with --design)'));
       out.push(check('p2:design.md has a "## decision" line', false, 'file missing: design.md — create it from templates/design.md (this check runs only with --design)'));
+      out.push(check('p2:design.md direction blocks are substantive (>= 150 chars each)', false, 'file missing: design.md — create it from templates/design.md (this check runs only with --design)'));
     } else {
       // >= 2 directions: a single direction is a default, not a design decision; two proves alternatives were actually compared.
       const dirs = (design.match(/^###\s*direction/gim) || []).length;
       const decLine = /^##\s*decision/im.test(design);
       out.push(check('p2:design.md has >= 2 substantive "### direction" sections', dirs >= 2, `found ${dirs}, need >= 2`));
       out.push(check('p2:design.md has a substantive "## decision" line', decLine, decLine ? 'present' : 'not found — add a "## decision" section naming the chosen direction'));
+      // Substance floor per direction block, same 150-char rule (and same
+      // rationale) as the decisions.md blocks above: a direction that fits
+      // in a tweet has no trade-offs stated, so it was never really weighed.
+      const dblocks = directionBlocks(design);
+      const thinDirs = [];
+      dblocks.forEach((b, i) => {
+        const len = b.replace(/\s+/g, ' ').trim().length;
+        if (len < 150) thinDirs.push(`direction ${i + 1} (${len} chars, need >= 150)`);
+      });
+      out.push(check(
+        'p2:design.md direction blocks are substantive (>= 150 chars each)',
+        dblocks.length > 0 && thinDirs.length === 0,
+        dblocks.length === 0
+          ? 'no "### direction" blocks found — add at least two direction blocks of >= 150 chars each to design.md'
+          : (thinDirs.length === 0
+            ? `${dblocks.length} direction blocks, all >= 150 chars`
+            : `thin blocks: ${thinDirs.join('; ')} — expand each direction with its approach, costs, and trade-offs`),
+      ));
     }
   }
   return out;
 }
 
 function checksP3(dir) {
+  const out = [];
+  out.push(checkGateLog(dir, 'p3', 'p2'));
   const tasks = readQuiet(path.join(dir, 'tasks.md'));
   if (tasks === null) {
-    return [check('p3:every checkbox line has a substantive "done when"', false, 'file missing: tasks.md — run --init <dir> to scaffold it from templates/, then replace the example tasks with real ones')];
+    out.push(check('p3:every checkbox line has a substantive "done when"', false, 'file missing: tasks.md — run --init <dir> to scaffold it from templates/, then replace the example tasks with real ones'));
+    out.push(check('p3:tasks.md has >= 1 done task', false, 'file missing: tasks.md — run --init <dir> to scaffold it from templates/, then replace the example tasks with real ones'));
+  } else {
+    const lines = stripPlaceholders(tasks).split('\n');
+    const boxes = lines.filter((line) => /^\s*-\s*\[[ xX]\]/.test(line));
+    if (boxes.length === 0) {
+      out.push(check('p3:every checkbox line has a substantive "done when"', false, 'no substantive task lines (template examples do not count — replace them with real tasks)'));
+      out.push(check('p3:tasks.md has >= 1 done task', false, 'no substantive task lines — replace the template examples in tasks.md with real tasks and mark at least one "- [x]" when its work is actually done'));
+    } else {
+      const bad = [];
+      let open = 0, done = 0;
+      for (const line of boxes) {
+        if (/^\s*-\s*\[[xX]\]/.test(line)) done++; else open++;
+        if (!substantiveDoneWhen(line)) bad.push(line.trim().slice(0, 120));
+      }
+      const detail = bad.length === 0
+        ? `all ${open + done} checkbox lines have a substantive "done when" (open: ${open}, done: ${done})`
+        : `${bad.length} violating line(s) (open: ${open}, done: ${done}): ${bad.map((b) => `"${b}"`).join('; ')}`;
+      out.push(check('p3:every checkbox line has a substantive "done when"', bad.length === 0, detail));
+      // >= 1 done: p3 is the build phase — passing it with zero completed
+      // tasks certifies work that never happened.
+      out.push(check(
+        'p3:tasks.md has >= 1 done task',
+        done >= 1,
+        done >= 1
+          ? `${done} done, ${open} open`
+          : 'done-task count is 0 — complete at least one real task and mark it "- [x]" in tasks.md before running the p3 gate',
+      ));
+    }
   }
-  const lines = stripPlaceholders(tasks).split('\n');
-  const boxes = lines.filter((line) => /^\s*-\s*\[[ xX]\]/.test(line));
-  if (boxes.length === 0) {
-    return [check('p3:every checkbox line has a substantive "done when"', false, 'no substantive task lines (template examples do not count — replace them with real tasks)')];
+  // Progress provenance: at least one real dated entry. A dated heading
+  // counts only when its block holds non-placeholder content lines — the
+  // template's own "## 2026-10-13" heading survives stripping but all of
+  // its EXAMPLE bullets do not, so a fresh scaffold still fails here.
+  const rawProg = readQuiet(path.join(dir, 'progress.md'));
+  if (rawProg === null) {
+    out.push(check('p3:progress.md has >= 1 non-template dated entry', false, 'file missing: progress.md — run --init <dir> to scaffold it from templates/, then log the work under a "## YYYY-MM-DD" heading'));
+  } else {
+    const plines = stripPlaceholders(rawProg).split('\n');
+    let datedEntries = 0;
+    for (let i = 0; i < plines.length; i++) {
+      if (!/^##\s*\d{4}-\d{2}-\d{2}\s*$/.test(plines[i].trim())) continue;
+      let hasContent = false;
+      for (let j = i + 1; j < plines.length; j++) {
+        if (/^##\s/.test(plines[j])) break;
+        if (plines[j].trim().length > 0) { hasContent = true; break; }
+      }
+      if (hasContent) datedEntries++;
+    }
+    out.push(check(
+      'p3:progress.md has >= 1 non-template dated entry',
+      datedEntries >= 1,
+      datedEntries >= 1
+        ? `found ${datedEntries} dated entr${datedEntries === 1 ? 'y' : 'ies'} with real content`
+        : 'no dated entry with real content — add a "## YYYY-MM-DD" heading (today\'s date) to progress.md with at least one real "- done: ..." line under it; the template\'s EXAMPLE lines do not count',
+    ));
   }
-  const bad = [];
-  let open = 0, done = 0;
-  for (const line of boxes) {
-    if (/^\s*-\s*\[[xX]\]/.test(line)) done++; else open++;
-    if (!substantiveDoneWhen(line)) bad.push(line.trim().slice(0, 120));
+  return out;
+}
+
+/** Required "## Audits run" rows, derived (never flagged) from the run's
+ *  own records. Script-token patterns accept the sanctioned name variants:
+ *  audit-repo ships as .sh and .mjs; the others as .mjs (a .sh wrapper is
+ *  accepted too); floor-guard is a review pass, not a script file, so it
+ *  takes an optional scripts/ prefix. */
+const AUDIT_SCRIPT_PATTERNS = {
+  'audit-repo': String.raw`scripts/audit-repo(?:\.(?:sh|mjs))?`,
+  'readiness-audit': String.raw`scripts/readiness-audit(?:\.(?:sh|mjs))?`,
+  'prose-scan': String.raw`scripts/prose-scan(?:\.(?:sh|mjs))?`,
+  'floor-guard': String.raw`(?:scripts/)?floor-guard(?:\.(?:sh|mjs))?`,
+};
+const AUDIT_ROW_EXAMPLES = {
+  'audit-repo': '- `scripts/audit-repo.sh` — verdict: pass',
+  'readiness-audit': '- `scripts/readiness-audit.mjs` — verdict: pass',
+  'prose-scan': '- `scripts/prose-scan.mjs` — verdict: pass',
+  'floor-guard': '- `floor-guard` — verdict: pass',
+};
+
+function requiredAudits(dir) {
+  const ids = ['audit-repo']; // always: the repo audit runs on every build
+  const rawTask = readQuiet(path.join(dir, 'task.md'));
+  const consulted = rawTask === null ? [] : (parseConsulted(rawTask) ?? []);
+  if (consulted.includes('web-frontend.md') || consulted.includes('react-nextjs.md')) ids.push('readiness-audit');
+  let prose = consulted.includes('writing-craft.md');
+  if (!prose && rawTask !== null) {
+    const fc = sectionAfter(stripPlaceholders(rawTask), /^##\s*file changes\s*$/im, /^##\s/m);
+    // Any planned .md change is user-facing prose, so the prose scan applies.
+    if (fc !== null && /[\w./-]+\.md\b/.test(fc)) prose = true;
   }
-  const detail = bad.length === 0
-    ? `all ${open + done} checkbox lines have a substantive "done when" (open: ${open}, done: ${done})`
-    : `${bad.length} violating line(s) (open: ${open}, done: ${done}): ${bad.map((b) => `"${b}"`).join('; ')}`;
-  return [check('p3:every checkbox line has a substantive "done when"', bad.length === 0, detail)];
+  if (prose) ids.push('prose-scan');
+  const tgt = rawTask === null ? { target: null } : parseTarget(rawTask);
+  if (tgt.target !== null && tgt.target !== 'none') {
+    const resolved = path.isAbsolute(tgt.target) ? tgt.target : path.resolve(dir, tgt.target);
+    // floor-guard exists only where a project floor exists: a CONSTRAINTS.md
+    // in an on-disk target repo.
+    if (existsSync(resolved) && existsSync(path.join(resolved, 'CONSTRAINTS.md'))) ids.push('floor-guard');
+  }
+  return ids;
+}
+
+function checksAudits(dir, report) {
+  const out = [];
+  const ids = requiredAudits(dir);
+  const sec = report === null ? null : sectionAfter(report, /^##\s*audits run\s*$/im, /^##\s/m);
+  for (const id of ids) {
+    const name = `p4:report.md "## Audits run" has a "${id}" row with verdict pass / reasoned cannot-verify`;
+    if (report === null) {
+      out.push(check(name, false, 'file missing: report.md — run --init <dir> to scaffold it from templates/, then write the report'));
+      continue;
+    }
+    if (sec === null) {
+      out.push(check(name, false, `"## Audits run" section not found in report.md — add the section and a row "${AUDIT_ROW_EXAMPLES[id]}" (or the same row with "verdict: cannot verify — <reason of >= 20 chars>")`));
+      continue;
+    }
+    const tokenRe = new RegExp('`' + AUDIT_SCRIPT_PATTERNS[id] + '`');
+    const row = sec.split('\n').find((l) => tokenRe.test(l));
+    if (!row) {
+      out.push(check(name, false, `no "${id}" row in "## Audits run" — add the row "${AUDIT_ROW_EXAMPLES[id]}" (or the same row with "verdict: cannot verify — <reason of >= 20 chars>")`));
+      continue;
+    }
+    const m = row.match(/verdict:\s*(pass|cannot verify)\b(.*)$/i);
+    if (!m) {
+      out.push(check(name, false, `"${id}" row has no sanctioned verdict — end the row with "verdict: pass" or "verdict: cannot verify — <reason of >= 20 chars>": "${row.trim().slice(0, 120)}"`));
+      continue;
+    }
+    if (/^pass$/i.test(m[1].trim())) {
+      out.push(check(name, true, `"${id}" row verdict: pass`));
+      continue;
+    }
+    // cannot verify: the reason after the second em dash must be real.
+    // >= 20 chars: the same floor as failure-mode bullets — "n/a" / "not run"
+    // fit well under 20 and name no cause; a real blocker does not.
+    const rm = (m[2] || '').match(/^\s*[—-]\s*(.+)$/);
+    const reason = rm ? rm[1].trim() : '';
+    if (reason.length >= 20) {
+      const c = check(name, true, `"${id}" row verdict: cannot verify — ${reason} (accepted; recorded as unverified in gate-log.md)`);
+      c.unverified = [id];
+      out.push(c);
+    } else {
+      out.push(check(name, false, `"${id}" row says "cannot verify" but the reason is ${reason.length} chars (need >= 20) — state the concrete blocker after "verdict: cannot verify — ", or run the audit and record "verdict: pass"`));
+    }
+  }
+  return out;
+}
+
+/** When review-loop.md was consulted, the review must leave artifacts:
+ *  review.md with real base/head refs, substantive verdicts, and an explicit
+ *  declined-to-judge section (which may honestly state none). */
+function checksReview(dir) {
+  const out = [];
+  const rawRev = readQuiet(path.join(dir, 'review.md'));
+  const lineValue = (label) => {
+    if (rawRev === null) return null;
+    const m = rawRev.match(new RegExp(`^${escRe(label)}:\\s*(.*)$`, 'm'));
+    return m ? m[1].trim() : null;
+  };
+  const realValue = (v) => v !== null && v.length > 0 && !EXAMPLE_RE.test(v) && !PLACEHOLDER_RE.test(v);
+  if (rawRev === null) {
+    const miss = 'file missing: review.md — review-loop.md is in "## Consulted", so create review.md in the run dir (run --init <dir> to scaffold it) and record the review in it';
+    out.push(check('p4:review.md has non-placeholder "BASE:"/"HEAD:" lines', false, miss));
+    out.push(check('p4:review.md "Spec verdict:"/"Quality verdict:" lines are substantive (>= 20 chars)', false, miss));
+    out.push(check('p4:review.md has a "## Declined to judge" section', false, miss));
+    return out;
+  }
+  const base = lineValue('BASE');
+  const head = lineValue('HEAD');
+  const refsOk = realValue(base) && realValue(head);
+  out.push(check(
+    'p4:review.md has non-placeholder "BASE:"/"HEAD:" lines',
+    refsOk,
+    refsOk
+      ? `BASE: ${base}; HEAD: ${head}`
+      : 'review.md needs real "BASE: <base ref>" and "HEAD: <head ref>" lines naming the reviewed range (the EXAMPLE lines do not count)',
+  ));
+  const spec = lineValue('Spec verdict');
+  const qual = lineValue('Quality verdict');
+  // >= 20 chars: same floor as grill verdicts — under it only "ok"/"fine" fit.
+  const badVerdicts = [['Spec verdict', spec], ['Quality verdict', qual]]
+    .filter(([, v]) => !realValue(v) || v.length < 20)
+    .map(([label, v]) => `${label} (${v === null ? 'missing' : `${v.length} chars`})`);
+  out.push(check(
+    'p4:review.md "Spec verdict:"/"Quality verdict:" lines are substantive (>= 20 chars)',
+    badVerdicts.length === 0,
+    badVerdicts.length === 0
+      ? 'both verdicts present and >= 20 chars'
+      : `fix in review.md: ${badVerdicts.join('; ')} — write a real one-line verdict of >= 20 chars for each (EXAMPLE lines do not count)`,
+  ));
+  const hasDeclined = /^##\s*declined to judge\s*$/im.test(rawRev);
+  out.push(check(
+    'p4:review.md has a "## Declined to judge" section',
+    hasDeclined,
+    hasDeclined ? 'present' : '"## Declined to judge" section not found in review.md — add the section (it may state "- none" when nothing was declined)',
+  ));
+  return out;
 }
 
 function checksP4(dir, strict, checklistFiles, skillRoot) {
   const out = [];
+  out.push(checkGateLog(dir, 'p4', 'p3'));
   const raw = readQuiet(path.join(dir, 'report.md'));
   const report = raw === null ? null : stripPlaceholders(raw);
+  // Derived attestation set: every chapter in task.md "## Consulted" is
+  // attested by default. CLI --checklists entries only ADD to this set —
+  // they can never subset it away.
+  const rawTask4 = readQuiet(path.join(dir, 'task.md'));
+  const consulted4 = rawTask4 === null ? [] : (parseConsulted(rawTask4) ?? []);
+  const effectiveChecklists = [...new Set([...consulted4, ...(checklistFiles || [])])];
   if (report === null) {
     out.push(check('p4:report.md "## Verification" has a pass verdict', false, 'file missing: report.md — run --init <dir> to scaffold it from templates/, then write the report'));
   } else {
@@ -476,15 +855,18 @@ function checksP4(dir, strict, checklistFiles, skillRoot) {
     if (sec === null) {
       out.push(check('p4:report.md "## Verification" has a pass verdict', false, '"## Verification" section not found in report.md — add the section and record an explicit pass verdict line in it'));
     } else {
-      const verdicts = sec.split('\n').filter((l) => /pass/i.test(l) || /\[x\]/i.test(l));
+      // Word-boundary pass token: "pass", "passes" or "passed" as a whole
+      // word. A bare /pass/i substring also matches "password" — a line
+      // about a password flow is not a verification verdict.
+      const verdicts = sec.split('\n').filter((l) => /\bpass(?:ed|es)?\b/i.test(l) || /\[x\]/i.test(l));
       out.push(check(
         'p4:report.md "## Verification" has a pass verdict',
         verdicts.length >= 1,
-        verdicts.length >= 1 ? `verdict line(s): ${verdicts.length}` : 'no line matching /pass/i or /[x]/i in the section — add an explicit verdict line such as "result: pass" or a checked [x] item',
+        verdicts.length >= 1 ? `verdict line(s): ${verdicts.length}` : 'no line with a whole-word pass verdict (pass/passes/passed) or a checked [x] item in the section — add an explicit verdict line such as "result: pass" (note: "password" does not count)',
       ));
     }
   }
-  for (const entry of checklistFiles || []) {
+  for (const entry of effectiveChecklists) {
     // Resolve relative to skill root, falling back to references/<entry>.
     let p = path.resolve(skillRoot, entry);
     let t = readQuiet(p);
@@ -530,6 +912,8 @@ function checksP4(dir, strict, checklistFiles, skillRoot) {
       ));
     }
   }
+  out.push(...checksAudits(dir, report));
+  if (consulted4.includes('review-loop.md')) out.push(...checksReview(dir));
   return out;
 }
 
@@ -577,8 +961,49 @@ function checksCritical(dir, skillRoot) {
 // --init
 // ---------------------------------------------------------------------------
 
+/** Append a canonical scaffold block to a copied template when its section
+ *  is absent, so --init output carries the current format contract even if
+ *  the templates dir lags it. Never duplicates a section the template
+ *  already has. The appended lines are EXAMPLE placeholders: they scaffold
+ *  the shape and (by the placeholder rule) can never satisfy a gate. */
+function ensureScaffoldSection(file, headerRe, block) {
+  const t = readQuiet(file);
+  if (t === null || headerRe.test(t)) return;
+  appendFileSync(file, (t.endsWith('\n') ? '' : '\n') + block);
+}
+
+function ensureCanonicalSections(targetDir) {
+  ensureScaffoldSection(
+    path.join(targetDir, 'task.md'),
+    /^##\s*target\s*$/im,
+    '\n## Target\n\nEXAMPLE: /path/to/target-repo (or: none)\n',
+  );
+  ensureScaffoldSection(
+    path.join(targetDir, 'task.md'),
+    /^##\s*consulted\s*$/im,
+    '\n## Consulted\n\n- EXAMPLE: security.md\n',
+  );
+  ensureScaffoldSection(
+    path.join(targetDir, 'decisions.md'),
+    /^\s*Approval:/m,
+    '\nApproval: EXAMPLE: <name/date>, or: not required — small and reversible\n',
+  );
+  ensureScaffoldSection(
+    path.join(targetDir, 'report.md'),
+    /^##\s*audits run\s*$/im,
+    '\n## Audits run\n\n- `scripts/audit-repo.sh` — verdict: EXAMPLE\n',
+  );
+}
+
 function runInit(targetDir, skillRoot) {
   mkdirSync(targetDir, { recursive: true });
+  // gate-log.md starts empty; phase successes append to it. Never truncate
+  // an existing log — it is the run's chaining provenance.
+  const gateLog = path.join(targetDir, 'gate-log.md');
+  if (!existsSync(gateLog)) {
+    writeFileSync(gateLog, '');
+    console.log('created gate-log.md (empty)');
+  }
   const tplDir = path.join(skillRoot, 'templates');
   let files;
   try { files = new Set(readdirSync(tplDir)); }
@@ -590,6 +1015,15 @@ function runInit(targetDir, skillRoot) {
   let copied = 0;
   for (const f of TEMPLATE_FILES) {
     if (!files.has(f)) {
+      if (f === 'review.md') {
+        // Embedded canonical fallback so a run dir always gets a review.md
+        // scaffold even when templates/ has not caught up yet.
+        const dest = path.join(targetDir, f);
+        if (!existsSync(dest)) writeFileSync(dest, REVIEW_TEMPLATE);
+        console.log('scaffolded review.md (embedded fallback — templates/review.md missing)');
+        copied++;
+        continue;
+      }
       console.error(`[warn] template missing: ${path.join(tplDir, f)} (skipped — restore it in the skill templates directory)`);
       continue;
     }
@@ -597,7 +1031,28 @@ function runInit(targetDir, skillRoot) {
     console.log(`copied ${f}`);
     copied++;
   }
+  ensureCanonicalSections(targetDir);
   console.log(`initialized ${targetDir} with ${copied}/${TEMPLATE_FILES.length} templates`);
+}
+
+/** Append the success line to <dir>/gate-log.md:
+ *  "pN PASS <ISO-8601 timestamp>", plus " flags: ..." when CLI flags were
+ *  passed, plus " unverified: <audit names>" when p4 passed with
+ *  cannot-verify audit rows. This log is what the next phase chains on. */
+function appendGateLog(dir, phase, args, unverified) {
+  const flags = [];
+  if (args.design) flags.push('--design');
+  if (args.strict) flags.push('--strict');
+  if (args.checklists) flags.push(`--checklists ${args.checklists}`);
+  if (args.critical) flags.push('--critical');
+  let line = `${phase} PASS ${new Date().toISOString()}`;
+  if (flags.length) line += ` flags: ${flags.join(' ')}`;
+  if (unverified.length) line += ` unverified: ${unverified.join(', ')}`;
+  try {
+    appendFileSync(path.join(dir, 'gate-log.md'), `${line}\n`);
+  } catch {
+    console.error('[warn] GATE PASS but gate-log.md could not be appended — the next phase will fail its chaining check until the log is writable');
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -626,17 +1081,26 @@ function main() {
   const dir = path.resolve(args.dir);
   const checklistFiles = args.checklists ? args.checklists.split(',').map((s) => s.trim()).filter(Boolean) : [];
   let results;
-  if (args.phase === 'p1') results = checksP1(dir);
+  if (args.phase === 'p1') results = checksP1(dir, skillRoot);
   else if (args.phase === 'p2') results = checksP2(dir, skillRoot, args.design);
   else if (args.phase === 'p3') results = checksP3(dir);
   else {
     results = checksP4(dir, args.strict, checklistFiles, skillRoot);
-    if (args.critical) results.push(...checksCritical(dir, skillRoot));
+    // Critical-path attestation runs by default at p4 (derived, not
+    // flagged); --critical remains accepted and is recorded in the log.
+    results.push(...checksCritical(dir, skillRoot));
   }
 
   const failures = results.filter((r) => !r.ok);
+  // Audits accepted on a "cannot verify" attestation: they pass the gate
+  // but stay visible — printed as warnings here and named in the log line.
+  const unverified = [...new Set(results.flatMap((r) => r.unverified || []))];
   for (const r of results) console.log(`${r.ok ? '[ok]' : '[FAIL]'} ${r.name}: ${r.detail}`);
   if (failures.length === 0) {
+    for (const id of unverified) {
+      console.log(`[warn] unverified audit: ${id} — passed on a "cannot verify" attestation; recorded in gate-log.md`);
+    }
+    appendGateLog(dir, args.phase, args, unverified);
     console.log('GATE PASS');
     process.exit(0);
   } else {

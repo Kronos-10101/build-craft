@@ -56,7 +56,7 @@ The skill lives in [`build-craft/`](build-craft/) and follows the spec layout (`
 
 **Scripts** (`scripts/`) — `fetch-skill.sh` (download + verify + red-flag-scan a skill from GitHub, pinned to a commit SHA), `audit-repo.sh` (run installed linters/scanners + high-signal greps), `readiness-audit.mjs` (zero-dependency static analysis audit: secrets, backend resilience, anti-AI-slop craft, ethical UI, a11y, perf/SEO), `check-skill.sh` (validate any `SKILL.md` against the spec), `craft-gate.mjs` (phase gates that enforce the P-1→P-4 workflow against run artifacts), `prose-scan.mjs` (scan Markdown/text prose for AI-slop patterns, hard flags fail the P-4 prose check; `--json` for pipelines; companion to `references/writing-craft.md`, adapted from [unslop](https://github.com/theclaymethod/unslop), MIT).
 
-**Run-artifact templates** (`templates/`) — starter copies of the eight run artifacts the phase gates check: `task.md`, `tasks.md`, `progress.md`, `decisions.md`, `grill.md`, `design.md`, `architecture.md`, `report.md`.
+**Run-artifact templates** (`templates/`) — starter copies of the run artifacts the phase gates check: `task.md`, `tasks.md`, `progress.md`, `decisions.md`, `grill.md`, `design.md`, `architecture.md`, `report.md`, plus `review.md` when `review-loop.md` is consulted.
 
 **Evals** (`evals/`) — authoring-side evaluation scenarios for testing changes to this skill itself (fresh agent with the skill vs a baseline without it, scored against checkable expected behaviors); see [`build-craft/evals/README.md`](build-craft/evals/README.md). Not referenced by `SKILL.md` and not loaded at runtime.
 
@@ -104,6 +104,17 @@ Anti-gaming: template example content is stripped before checking, including dis
 **Honest limit.** The gate checks artifacts, not thought: thin-but-passing prose can still pass. It makes skipping expensive and visible (fabricating a plausible, cross-referenced, attested artifact is most of the work of doing it properly). Grill depth and decision quality are covered one layer up by the rubric-anchored judge pass and, for large or irreversible work, by human approval at P-2.
 
 The hard rule: do not proceed to the next phase until the gate command exits 0. A red gate means fix the artifact and re-run the gate — never skip it.
+
+## Utilization traces
+
+The gates leave traces that show the skill was actually used, not just invoked:
+
+- **`## Consulted` traces** — `task.md` records every routed reference chapter, one basename per line, and the p1 gate verifies each name against `references/`. `task.md` also carries a `## Target` line: the target repo path, or `none` for plan-only runs.
+- **`gate-log.md`** — each successful gate appends a timestamped PASS line (`p1`, `p2`, …) to `gate-log.md` in the run dir, and phases chain on it: a phase gate requires the previous phase's PASS line, so a later pass cannot exist without the earlier ones.
+- **`## Audits run`** — `report.md` records one verdict row per audit (for example, the `scripts/audit-repo.sh` row). When an audit cannot run, the sanctioned exit is `verdict: cannot verify — <reason>`: a legitimate recorded outcome, never a fabricated pass. Attestation scope is derived from `## Consulted` by default; the `--checklists` / `--critical` flags only add files.
+- **`decisions.md` approval** — an `Approval:` line records the approver name and date, or that approval was not required because the work is small and reversible.
+
+Claude Code users who want harness-level enforcement of the same gates can install the optional hooks add-on: see [`build-craft/hooks/README.md`](build-craft/hooks/README.md).
 
 ## The self-fetching bit
 

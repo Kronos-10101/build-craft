@@ -1,8 +1,8 @@
 ---
 name: "build-craft"
-description: "This skill acts as a senior staff engineer for software work of any kind: websites, frontend UI, and browser extensions, backends and REST APIs, Python, C, modern C++, JavaScript and TypeScript, React and Next.js, system design, database schemas, and AI/ML work including LLMs, agents, MCP servers, and vector databases. It plans the work, grills the plan with hostile questions until the plan survives, then builds or audits to production standard, routing each task to reference chapters on security, offensive security, testing, performance, and design polish, with machine-checked phase gates and severity-graded audit findings. Use it when asked to build, review, improve, secure, optimize, or audit software, when asked to make a codebase production-ready or run a full review, or when a plan needs grilling before code is written. When no routed reference chapter covers the task, it fetches and vets a specialized skill from the internet."
+description: "This skill helps build, audit, and review software to a production-ready standard: it plans the work, grills the plan, then builds or audits, routing each task to reference chapters. Use it to build, audit, review, secure, optimize, or make production-ready any software: websites, frontend UI, browser extensions, backends and REST APIs, Python, C, modern C++, JavaScript and TypeScript, React and Next.js, system design, database schemas, and AI/ML work including LLMs, agents, MCP servers, and vector databases. It routes to chapters on security, offensive security, testing, performance, and design polish, with machine-checked phase gates and severity-graded audit findings. When no routed chapter covers the task, it fetches and vets a specialized skill from the internet."
 license: "MIT"
-metadata: { "version": "1.3.0" }
+metadata: { "version": "1.4.0" }
 ---
 
 # build-craft
@@ -17,20 +17,24 @@ Use for any build, review, improvement, security, optimization, or audit task on
 
 ## How to use this skill (reading order)
 
-Follow this exact order. How much freedom each phase allows is defined under Degrees of freedom below.
+Follow this exact order on every run. How much freedom each phase allows is defined under Degrees of freedom below.
 
 1. **Read this file (`SKILL.md`) fully.** It defines the workflow. Then read `references/critical-path.md`, the non-skippable MUST items; it outranks every reference chapter under time pressure.
-2. **Scaffold the run dir**: `node scripts/craft-gate.mjs --init <run-dir>`. All run dir artifacts live in `<run-dir>`: `task.md`, `tasks.md`, `progress.md`, `decisions.md`, `grill.md`, `design.md`, `architecture.md`, `report.md`.
+2. **Scaffold the run dir**: `node scripts/craft-gate.mjs --init <run-dir>`. All run dir artifacts live in `<run-dir>`: `task.md`, `tasks.md`, `progress.md`, `decisions.md`, `grill.md`, `design.md`, `architecture.md`, `report.md`, `review.md`.
 3. **Classify the task** (P-0): build vs audit vs plan-only.
-4. **Plan** (P-1): break the work down and write the plan into `task.md` / `tasks.md`.
+4. **Plan** (P-1): break the work down and write the plan into `task.md` / `tasks.md`. Set `task.md` `## Target` to a single content line: the target repo path, or `none` for plan-only runs.
 5. **Grill the plan** (P-2): interrogate it per reference chapter `planning-grill.md` until it survives; log rounds in `grill.md`, verdicts in `decisions.md`. Present the plan to the user for approval on large or irreversible work.
-6. **Read the routed reference chapters**: every chapter the routing table lists for the task, **before** writing code. Do not rely on memory for the checklists. Open the chapter.
+6. **Read the routed reference chapters**: every chapter the routing table lists for the task, **before** writing code. Do not rely on memory for the checklists. Open the chapter. Before writing code, record every routed chapter in `task.md` `## Consulted`, one routed chapter per line, basename only; the p1 gate verifies each name against `references/`.
 7. **Copy starter templates** from `assets/templates/` and adapt them (scaffold first).
 8. **Build** to the checklists (P-3), tracking progress in `progress.md`.
 9. **Verify** (P-4): self-review against the checklists, run tests, run `scripts/audit-repo.sh`, fill the `report.md` verification section.
 10. **Report** per the Output Contract (P-5).
 
 Skipping steps 4–5 is how production incidents are born. The order is load-bearing: plan, grill, read checklists, scaffold, build, verify, report.
+
+**After compaction or a long pause:** re-read this file (`SKILL.md`), the run artifacts, and the current phase's chapter before continuing. This is standing guidance on every run, not a one-time step: context lost to compaction is recovered by re-reading, never by guessing.
+
+Optional add-on: Claude Code users who want harness-level enforcement of these gates can install the hooks in `hooks/README.md`.
 
 ## Degrees of freedom
 
@@ -44,18 +48,20 @@ Skipping steps 4–5 is how production incidents are born. The order is load-bea
 Every phase is gated by `scripts/craft-gate.mjs`, which checks the artifacts in the run dir and exits 0 on pass:
 
 - `node scripts/craft-gate.mjs --init <run-dir>`: scaffold the run dir from `templates/`.
-- `node scripts/craft-gate.mjs --phase <p1|p2|p3|p4> [--design] [--strict] [--checklists f1,f2] [--critical] --dir <run-dir>`: gate a phase. `--design` adds the design-task checks; `--strict` additionally fails on any unnegated "fail" line in `report.md`; `--checklists` requires per-checklist pass/waived attestation in `report.md` (see P-4); `--critical` requires `## Critical-path` attestation of every MUST item in reference chapter `critical-path.md`.
+- `node scripts/craft-gate.mjs --phase <p1|p2|p3|p4> [--design] [--strict] [--checklists f1,f2] [--critical] --dir <run-dir>`: gate a phase. `--design` adds the design-task checks; `--strict` additionally fails on any unnegated "fail" line in `report.md`; `--checklists` adds checklists to the attestation set the gate derives from `task.md` `## Consulted` (see P-4); `--critical` adds `## Critical-path` attestation of every MUST item in reference chapter `critical-path.md`.
 
 **Global hard rule:** do not proceed to the next phase until `node scripts/craft-gate.mjs --phase <pX> --dir <run-dir>` exits 0. Each phase section below names its own gate command; this rule applies to all of them and is not repeated per phase.
 
+On each successful phase, the gate appends a PASS line with a timestamp to `gate-log.md` in the run dir. Phases chain on that log: a phase gate requires the previous phase's PASS line before it will pass.
+
 | Phase | Gate checks |
 |---|---|
-| p1 | `task.md` has all 7 headers; every `tasks.md` task has a substantive "done when" (condition ≥20 chars, no tautologies) |
+| p1 | `task.md` has all 9 headers, a valid `## Target` line, and a `## Consulted` list whose names all exist in `references/`; every `tasks.md` task has a substantive "done when" (condition ≥20 chars, no tautologies) |
 | p2 | `grill.md` has ≥1 round with ≥3 substantive `Q:`/`A:` (≥30 chars each, every Q answered), an explicit `(plan updated: yes/no)` stop predicate, the `## Rubric` section, and a `## Judge pass` with ≥2 substantive `Verdict:` lines; `decisions.md` has ≥2 substantive `## D` entries (≥150 chars each) with "why X over Y" + source URLs (each URL in `references/`) naming a file path from `task.md` `## File changes`; `task.md` lists ≥3 substantive pre-mortem failure modes (≥20 chars each) |
 | p3 | every `tasks.md` checkbox has a substantive "done when" (open/done counts reported); `design.md` picked and grilled when `--design` |
-| p4 | `report.md` `## Verification` has a pass verdict (documenting tests, linters, audit runs); with `--checklists`, `## Checklist attestation` lists "`<name>`: `<p>` pass, `<w>` waived" per checklist with p+w = that checklist's item count; with `--critical`, `## Critical-path` attests all MUST items ("all `<N>` reviewed", "no waivers", or reasoned per-item waivers) |
+| p4 | `report.md` `## Verification` has a pass verdict (documenting tests, linters, audit runs) and `## Audits run` has a well-formed verdict row per audit; with `--checklists`, `## Checklist attestation` lists "`<name>`: `<p>` pass, `<w>` waived" per checklist with p+w = that checklist's item count; with `--critical`, `## Critical-path` attests all MUST items ("all `<N>` reviewed", "no waivers", or reasoned per-item waivers) |
 
-**What the gate cannot do.** The gate checks artifacts, not thought. An agent can still write thin-but-passing prose (3 shallow questions, 2 shallow decisions) and pass. The gate makes skipping expensive and visible: every skipped step requires fabricating a plausible, cross-referenced, attested artifact, which is most of the work of doing it properly. Grill depth and decision quality sit one layer up, covered by the rubric-anchored judge pass and, for large or irreversible work, by human approval at P-2. When a measure becomes a target it degrades, so keep a log of gate FAIL reasons per run and revise checks that agents learn to game.
+**What the gate cannot do.** The gate checks artifacts, not thought. Thin-but-passing prose can still pass the substance floors: 3 shallow questions and 2 shallow decisions can satisfy the counts. Audit verdicts in `## Audits run` are recorded claims, not proof: the gate checks that each row exists and is well-formed, not that the audit truly ran. The gate still makes skipping expensive and visible, because every skipped step requires fabricating a plausible, cross-referenced artifact, which is most of the work of doing it properly. Grill depth and decision quality sit one layer up, covered by the rubric-anchored judge pass and, for large or irreversible work, by human approval at P-2. When a measure becomes a target it degrades, so keep a log of gate FAIL reasons per run and revise checks that agents learn to game.
 
 ## Workflow
 
@@ -70,7 +76,9 @@ Every phase is gated by `scripts/craft-gate.mjs`, which checks the artifacts in 
 
 Follow reference chapter `planning-grill.md` (Task planning and allocation; The implementation plan template): restate the goal in one sentence with explicit non-goals, decompose into tasks that each carry a substantive "done when" condition, order dependencies first and riskiest unknowns earliest, and mark what can run in parallel. A delegated subagent gets exactly one task with its own done-condition, never "help with the project".
 
-- Fill `task.md` completely: the 7 headers `## Goal`, `## Non-goals`, `## Decisions`, `## File changes`, `## Risks`, `## Failure modes`, `## Rollback`. Log started and completed work in `progress.md` in the run dir as you go.
+- Fill `task.md` completely: the 9 headers `## Goal`, `## Non-goals`, `## Decisions`, `## File changes`, `## Target`, `## Consulted`, `## Risks`, `## Failure modes`, `## Rollback`. Log started and completed work in `progress.md` in the run dir as you go.
+- Before writing code, record every routed chapter in `task.md` `## Consulted`, one routed chapter per line, basename only (a line naming `security.md`, for example); the p1 gate verifies each name against `references/`. This recording step applies on every run, whenever routing changes.
+- Set `task.md` `## Target` to a single content line: the target repo path, or `none` for plan-only runs.
 - Gate: `node scripts/craft-gate.mjs --phase p1 --dir <run-dir>`.
 
 ### P-2. Grill me: interrogate the plan until it survives
@@ -85,6 +93,10 @@ You are both the planner and the hostile reviewer. Attack the plan with question
 6. **Judge pass** (separate from the rounds above): re-read the grill log as the judge, not the author. Score every answer against the `## Rubric` in `grill.md` (evidence, adversarial coverage, decision clarity, stop discipline) and write at least 2 `Verdict:` lines. The judge pass is a different mental step from answering; never merge it into the last round.
 7. **Large or irreversible work** (schema migrations, deletions, public releases, money movement): present the grilled plan to the user and get explicit approval before P-3. For small reversible work, the self-grill is enough; say so in one line and proceed.
 8. **Design tasks**: work through `design.md`. Pick from 2-4 named directions in reference chapter `design-directions.md`, grill each direction, record the pick and why. Gate with `--design`.
+
+Record the approval outcome in `decisions.md` on its `Approval:` line, on every run: the approver name and date for large or irreversible work, or `Approval: not required — small and reversible` for small reversible work.
+
+Phases chain via `gate-log.md` in the run dir: the p2 gate requires a p1 PASS line in that log, p3 requires a p2 PASS line, and so on. A missing PASS line means the earlier phase never passed; run its gate first.
 
 If the user says "grill me", run this protocol against them directly: ask the questions, take their answers, sharpen the plan. Two tight rounds beat ten vague ones.
 
@@ -103,10 +115,14 @@ Gate: `node scripts/craft-gate.mjs --phase p3 --dir <run-dir>`.
 - Run the test suite (new tests per the plan's test section, plus existing).
 - Run the linters and typecheckers the routed reference chapters demand.
 - Execute `scripts/audit-repo.sh <repo-path>`, or `node scripts/audit-repo.mjs <repo-path>` on Windows/PowerShell without WSL (same checks, cross-platform), and treat its output as findings, not noise.
+- Record every audit in `report.md` `## Audits run`, one row per audit: the audit script in backticks, then its verdict (the `scripts/audit-repo.sh` row reads: verdict: pass, on a pass).
+- When an audit cannot run, record `verdict: cannot verify — <reason>` in Audits run; that is a legitimate outcome — fabricating a pass is not.
 - For web apps, also run `node scripts/readiness-audit.mjs <project-path> --ci`: the 46-rule production-readiness gate (security, resilience, anti-slop craft, ethical UI, formatting, a11y, perf/SEO). No critical blockers ship.
 - When the change includes user-facing prose (README/docs/report text), also run `node scripts/prose-scan.mjs <paths>` and fix every hard flag, or record it as accepted with a one-line reason, same discipline as any other P-4 check. Method: reference chapter `writing-craft.md`.
 - Debug before you fix: use the gated debugging method in reference chapter `testing.md` (Debugging as a gated method). No fix is proposed before the investigate gate passes.
 - Fill the verification section of `report.md`: what ran, what passed, what was waived and why. If the target project has a `CONSTRAINTS.md` (see reference chapter `quality-bar.md`), run its floor-guard diff review and record the verdict with the other checks. For routed checklists, add `## Checklist attestation` with one "`<name>`: `<p>` pass, `<w>` waived" line per checklist (p+w = that checklist's `- [ ]` item count) and gate with `--checklists <f1,f2>`.
+- Attestation scope is DERIVED by default: the gate builds the checklist and critical attestation set from `task.md` `## Consulted`; the `--checklists` and `--critical` flags only add files to that derived set, they do not replace it.
+- When reference chapter `review-loop.md` is consulted, `review.md` is required in the run dir: record its BASE and HEAD refs, spec verdict, quality verdict, anything declined to judge, and each fix round.
 - **Critical path**: add `## Critical-path` to `report.md` walking all MUST items in reference chapter `critical-path.md`: either "all `<N>` reviewed, no waivers" (exact count) or per-item waiver lines with reasons. **NEVER silently drop a critical-path item.** Gate with `--critical`.
 
 Gate: `node scripts/craft-gate.mjs --phase p4 --dir <run-dir>` (add `--strict`, `--checklists <f1,f2>`, `--critical` as the task demands).

@@ -1,5 +1,7 @@
 # Decision log
 
+Approval: EXAMPLE: <name/date>, or: not required — small and reversible
+
 One entry per decision, numbered. Blocks must contain "options considered",
 a "why X over Y" line, and "sources consulted" — the gate checks for these.
 

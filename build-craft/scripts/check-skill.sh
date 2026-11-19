@@ -11,6 +11,11 @@ Checks (per https://agentskills.io/specification):
   - description: 1-1024 chars, non-empty
   - compatibility: <=500 chars when present
   - body: warns if SKILL.md exceeds 500 lines (spec recommendation)
+  - first line of SKILL.md is exactly "---"
+  - link integrity: every references/*.md file is named in SKILL.md, and
+    every references/<name>.md mentioned in SKILL.md exists on disk
+  - table of contents: every references/*.md longer than 100 lines
+    contains a "## Contents" section
 
 Self-contained: stdlib only.
 """
@@ -36,6 +41,12 @@ def main():
         text = open(path, encoding="utf-8").read()
     except OSError as e:
         fail(f"cannot read {path}: {e} — check the path exists and the file is readable")
+
+    # First line must be exactly "---": the frontmatter opener, with no BOM,
+    # leading blank line, or trailing whitespace before it.
+    first_line = text.splitlines()[0] if text.splitlines() else ""
+    if first_line != "---":
+        fail(f"first line of SKILL.md must be exactly '---', got {first_line!r} — remove anything before the frontmatter opener (blank lines, BOM, comments) so the file starts with the --- line")
 
     m = re.match(r"^---\n(.*?)\n---\n(.*)$", text, re.S)
     if not m:
@@ -82,6 +93,41 @@ def main():
     # <= 500 chars: Agent Skills spec limit for the optional compatibility field.
     if "compatibility" in fields and len(fields["compatibility"]) > 500:
         fail("compatibility must be <= 500 characters — shorten the compatibility: value")
+
+    # Link integrity between SKILL.md and references/, in both directions:
+    # a reference chapter nobody routes to is dead weight, and a routed
+    # chapter that does not exist is a broken link the agent will hit.
+    skill_dir = os.path.dirname(os.path.abspath(path))
+    refs_dir = os.path.join(skill_dir, "references")
+    disk_refs = []
+    if os.path.isdir(refs_dir):
+        disk_refs = sorted(
+            entry
+            for entry in os.listdir(refs_dir)
+            if entry.endswith(".md") and os.path.isfile(os.path.join(refs_dir, entry))
+        )
+    unnamed = [entry for entry in disk_refs if entry not in text]
+    if unnamed:
+        fail(f"references/*.md file(s) not named in SKILL.md: {unnamed} — route each chapter from SKILL.md (routing table or workflow) or delete the unreferenced file")
+    mentioned = sorted(set(re.findall(r"references/([A-Za-z0-9._-]+\.md)", text)))
+    missing = [entry for entry in mentioned if not os.path.isfile(os.path.join(refs_dir, entry))]
+    if missing:
+        fail(f"SKILL.md mentions references file(s) that do not exist on disk: {missing} — create the missing chapter(s) or fix the mention in SKILL.md")
+
+    # Table of contents: a reference chapter longer than 100 lines must open
+    # with a "## Contents" section so a reader (human or agent) can navigate
+    # it without reading it whole. Short chapters (<= 100 lines) are exempt:
+    # they fit on one screen, so a TOC would be ceremony.
+    no_toc = []
+    for entry in disk_refs:
+        try:
+            ref_text = open(os.path.join(refs_dir, entry), encoding="utf-8").read()
+        except OSError as e:
+            fail(f"cannot read references/{entry}: {e} — check the file is readable")
+        if len(ref_text.splitlines()) > 100 and not re.search(r"^## Contents\s*$", ref_text, re.M):
+            no_toc.append(entry)
+    if no_toc:
+        fail(f"references/*.md file(s) longer than 100 lines with no '## Contents' section: {no_toc} — add a ## Contents section near the top of each, listing its sections")
 
     lines = text.count("\n") + 1
     # 500 lines: the spec's recommended SKILL.md size budget — beyond it, detail belongs in references/ (warn only: the spec states it as a recommendation, not a limit).
