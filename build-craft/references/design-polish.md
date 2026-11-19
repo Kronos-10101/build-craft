@@ -128,7 +128,7 @@ Scope: the verifiable craft system behind refined interfaces — typography, spa
 ## Micro-interactions & motion (2026)
 
 - [ ] Every interactive element has hover/focus/active states styled with `:has()` for parent-from-child state where JS class-toggling was needed before (e.g. `.form-group:has(input:focus)`).
-- [ ] Durations from tokens: press 100–160ms, simple transitions 150–300ms, modals/drawers 200–500ms, exits ≈60–70% of enter; `prefers-reduced-motion` honored globally.
+- [ ] Durations from tokens: press 100–160ms, simple transitions 150–300ms, modals/drawers 200–500ms, exits ≈70–80% of enter for views and panels, ≈33–50% for overlay dismissals (menus, popovers, toasts, drawers); `prefers-reduced-motion` honored globally.
 - [ ] Easing: ease-out entering / ease-in exiting by default; `linear()` for natural-feeling multi-segment curves; properties named explicitly — never `transition: all`.
 - [ ] Animate **transform and opacity only** on the compositor; one signal per hover (translate *or* color *or* underline); custom properties registered with `@property` when animated.
 - [ ] Discrete enter/exit animations via `@starting-style` + `transition-behavior: allow-discrete` (graceful in Firefox, where the exit is skipped rather than broken).
@@ -136,7 +136,7 @@ Scope: the verifiable craft system behind refined interfaces — typography, spa
 - [ ] Scroll-driven animations (`animation-timeline: scroll()/view()`) gated behind `@supports` and `prefers-reduced-motion` — progressive enhancement only (Firefox behind a flag as of mid-2026); content never gated on them.
 - [ ] Scroll containers use `scrollbar-gutter: stable` to prevent layout shift when scrollbars appear; `scroll-padding` keeps anchored content clear of sticky headers.
 - [ ] Named motion tokens (transitions.dev practice, checked 2026-10-02): durations, easings, distances, and blur as CSS custom properties; ad-hoc values tokenized in a refine pass — no raw `200ms` scattered in components. (The repo's "43+" tagline is its marketing claim; the shipped skill carries 32 transitions.)
-- [ ] Easing vocabulary with exact curves: default `--ease-smooth-out: cubic-bezier(0.22, 1, 0.36, 1)`; bounce curves (`cubic-bezier(0.34, 1.36, 0.64, 1)`) reserved for playful non-functional moments — never on functional motion.
+- [ ] Easing vocabulary with exact curves: default `--ease-smooth-out: cubic-bezier(0.22, 1, 0.36, 1)`; exits take `--ease-smooth-in: cubic-bezier(0.7, 0, 0.84, 0)`, moves that stay on screen take `--ease-smooth-in-out: cubic-bezier(0.65, 0, 0.35, 1)`, and a long-distance entrance may take the stronger ease-out `cubic-bezier(0.16, 1, 0.3, 1)`; `linear` is reserved for loops that never settle (spinners, progress fills, marquees) and is never an entrance or exit curve; bounce curves (`cubic-bezier(0.34, 1.36, 0.64, 1)`) reserved for playful non-functional moments — never on functional motion.
 - [ ] Interruptible by default: interactive state changes use CSS transitions (always interruptible); one-shot sequences use keyframes; never non-interruptible JS-driven animations on hover/active/press states.
 - [ ] Press feedback: `scale(0.96)` on press, never below `0.95`; paired with the 100–160ms press token.
 - [ ] Exits softer than enters: small fixed translateY (~4–8px), ease-out both directions; ~100ms stagger only for infrequent staged entrances (page-load lists), never on every interaction.

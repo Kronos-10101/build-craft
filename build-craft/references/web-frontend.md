@@ -273,7 +273,7 @@ The grouping, target, choice, and completion rules behind the sweep above — th
 - [ ] Similarity is a contract: one look per role, everywhere — every link, every destructive action, every card of a type shares one anatomy; anything that behaves differently must look different.
 - [ ] Uniform connectedness outranks proximity and similarity: a shared container or a joining line (stepper, timeline) declares "one thing" — never park unrelated items inside one container.
 - [ ] Prägnanz before decoration: spacing and alignment show the structure first; add a border, divider, or card only when layout alone leaves the grouping ambiguous.
-- [ ] Fitts — the primary action is the largest target on the screen and sits where the pointer or thumb already rests: beside the field it submits, at the bottom of the screen on mobile.
+- [ ] Fitts — the primary action is the largest target on the screen and sits where the pointer or thumb already rests: beside the field it submits, at the bottom of the screen on mobile. Touch targets measure at least 44pt on Apple platforms and 48dp on Material, padding included in the measure; on desktop, the screen's edges and corners are the cheapest targets there are: a target pinned flush to an edge is effectively wider than it looks, so persistent actions belong there when the layout allows.
 - [ ] Destructive actions sit apart from the primary action so a miss can't reach them; in their confirmation, Cancel takes the initial focus, the destructive button is no larger than Cancel, and its label names verb + object ("Delete address").
 - [ ] Small visuals get an expanded hit zone, not a bigger glyph — 16–24px icons, close buttons, and checkboxes expand via a centered pseudo-element:
 
@@ -300,7 +300,7 @@ The grouping, target, choice, and completion rules behind the sweep above — th
 - [ ] Undo beats confirmation for anything reversible: the item leaves the screen at once, a toast offers Undo for ≥5 seconds, and the request fires only when that window closes (or the page hides). Confirmations are reserved for destructive actions that can't be undone.
 - [ ] Progressive disclosure: the options most visits need are visible; the rest sit behind a "More options" expander, and a follow-up field appears only once the answer that triggers it exists — nothing most visits need is ever hidden.
 - [ ] Goal gradient: multi-step flows show position and remainder ("Step 2 of 4", "3 fields left"), count already-finished steps as done, and never read 0% after real progress; a progress fill animates `transform: scaleX` from the left edge (never `width`) and never moves backward.
-- [ ] Peak-end: every flow closes on a confirmation stating what happened and what happens next, never a bare redirect; fix the flow's worst moment (an error, a long wait) before polishing its average moments.
+- [ ] Peak-end: every flow closes on a confirmation stating what happened and what happens next, never a bare redirect, and the closing moment is built rather than defaulted — a drawn checkmark or an equivalent success beat over a plain summary of the outcome; fix the flow's worst moment (an error, a long wait) before polishing its average moments.
 
 ## Pre-ship verification suite
 

@@ -6,7 +6,7 @@ eye, how long each kind of move runs, and how the result holds up under
 interruption, slow networks, and reduced-motion settings. Durations,
 easing curves, springs, and named motion tokens live in `design-polish.md`;
 this chapter covers the decisions those values are picked to serve, and
-the checks that confirm the decisions worked. Checked 2026-11-13.
+the checks that confirm the decisions worked. Checked 2026-11-19.
 
 ## Contents
 
@@ -53,7 +53,9 @@ the checks that confirm the decisions worked. Checked 2026-11-13.
 ## Timing — exits run shorter and quieter
 
 - [ ] Pick durations and curves from the tokens in `design-polish.md`; this section governs how entrance and exit values relate, not the values themselves.
-- [ ] Exits run 20–30% shorter than their matching entrance — a departing element gets less time because the viewer's focus has already moved past it.
+- [ ] Exits run shorter than their matching entrance, by an amount set by the element's kind: a view or panel that replaces content (a page, a card, a modal) exits in 70–80% of its entrance
+  time — 20–30% shorter, because the viewer's focus has already moved past it; an overlay dismissal (a menu, popover, toast, or drawer being brushed away) exits in 1/3 to 1/2 of its
+  entrance time (a 250ms opening closes in roughly 100–150ms) because the dismissal is a decision already made, and the surface clears at once rather than performing its goodbye.
 - [ ] Exits are also quieter: a fade with a small nudge (roughly 8–16px toward where the element is headed, or a settle back toward the scale it entered from), never the full travel distance of the
   entrance.
 - [ ] Exception: when the destination is the meaning of the gesture (a drawer closing to its edge, a card swiped away), the element leaves along the path it arrived on, at full travel.
@@ -72,7 +74,8 @@ the checks that confirm the decisions worked. Checked 2026-11-13.
 
 ## Origin and pairing — growth starts at the trigger
 
-- [ ] Popovers, dropdowns, and tooltips scale from their trigger (transform-origin set to the trigger's position or side), never from their own center.
+- [ ] Popovers, dropdowns, and tooltips scale from their trigger (transform-origin set to the trigger's position or side), never from their own center; when a positioning library owns
+  the overlay, take the origin it computes rather than recomputing it — Radix, for one, exposes it as `--radix-popover-content-transform-origin`.
 - [ ] A scaling entrance starts at 0.95 (0.97 for small elements) with opacity at 0 — never from scale 0; an element that scales up from nothing reads as a pop, not a growth.
 - [ ] Paired elements that form one object (modal and its overlay, drawer and its backdrop, tooltip and its arrow) share a single duration and a single curve; mismatched timing between the two halves reads as a defect, so
   they are set together.
@@ -85,11 +88,15 @@ the checks that confirm the decisions worked. Checked 2026-11-13.
 - [ ] A secondary action also has timing bounds: it starts with the primary or within about 100ms of it, and finishes within about 150ms after it — a secondary that outlasts its primary has become a
   second lead.
 - [ ] When one action sets off several motions, chain them in sequence (each starts as the previous one lands) rather than running them side by side and splitting attention.
-- [ ] Stagger only content that arrives on its own: repeated items (rows, cards, menu entries) enter 30–50ms apart, and only the first 6 — the remainder come in together with the sixth.
+- [ ] Stagger only content that arrives on its own: repeated items (rows, cards, menu entries) enter 30–50ms apart, and only the first 6 — the remainder come in together with the sixth;
+  the whole cascade lands within about 300ms, and if the item count threatens that cap the gap shrinks, never the cap.
 - [ ] Distinct pieces of one section (heading, then body copy, then actions) stagger wider, 80–100ms apart; never slide a whole section in as a single block.
 - [ ] Content inside a container that is itself moving (a drawer's rows, a modal's body) arrives with the container, in one piece, with no stagger of its own.
-- [ ] A secondary action rides on a primary one, never stands alone: it starts with the primary or just after it, ends close behind it, and travels at most a third of the primary's movement.
+- [ ] A secondary action rides on a primary one, never stands alone: it starts with the primary or just after it, ends close behind it, and travels at most a third of the primary's movement;
+  if the two compete for the eye, the secondary is cut — the primary is never dimmed to make room for it.
 - [ ] Reserve exaggeration for moments that must register — a submit error, a failed attempt, a first success; on routine transitions it spends the attention it is meant to direct.
+- [ ] A like or favorite is the one routine exception to that reserve: it pops to about 1.2× and settles back to rest, a single overshoot that says the action landed; saves and
+  completions may borrow the same pop, and nothing else may.
 - [ ] Error shake, exactly: the field moves through translateX 0, −10, 10, −6, 6, −3, 0px over 360ms; focus moves to the field and the message sits beside it — and the shake never fires on blur, only
   on a failed submit or attempt.
 
@@ -104,20 +111,24 @@ the checks that confirm the decisions worked. Checked 2026-11-13.
 
 ## Physical techniques — weight, arcs, and depth
 
-- [ ] Arcs: when a move's start and end differ by more than 40px on both axes, curve the path so it bulges 10–20% of the travel distance off the straight line; single-axis moves (drawers, reorders)
-  stay straight.
+- [ ] Arcs: when a move's start and end differ by more than 40px on both axes, curve the path so it bulges 10–20% of the travel distance off the straight line — build the curve by
+  running the two axes on different easings (one eases out while the other runs ease-in-out), not by hand-placing waypoints; single-axis moves (drawers, reorders) stay straight.
 - [ ] For depth on an arc, scale the element up to at most 1.3 at the top of the path and deepen its shadow as it rises, so it reads as lifting off the surface instead of sliding across it.
 - [ ] Define motion as poses: the named states (closed/open, idle/pressed/done) or keyframes at explicit offsets, and let the engine interpolate; frame-by-frame code is only for motion driven live
   by input, such as drags and scroll-linked effects.
 - [ ] Follow-through: when a container stops, its non-text contents settle a beat later; drive them with a softer spring (damping ratio 0.7–0.85) or a 20–40ms delay, while text never lags, wobbles,
   or arrives separately.
 - [ ] Follow-through belongs to occasional and rare motion only: high-frequency interactions get none, and overshoot stays under roughly 4% of the travel distance.
-- [ ] Squash and stretch: at most 15% deformation, volume held constant (scaleX × scaleY ≈ 1), applied only to objects that behave physically (things that bounce, land, get dropped or caught), and
-  never to inputs, layout containers, or anything being read while it moves.
+- [ ] Squash and stretch: at most 15% deformation, volume held constant (scaleX × scaleY ≈ 1, as in scaleX 1.1 paired with scaleY 0.9), over 80–150ms, applied only to objects that
+  behave physically (toggles, like buttons, draggable cards, things that bounce, land, get dropped or caught), and never to inputs, layout containers, text, numbers, data, or anything
+  being read while it moves.
 - [ ] Flips and turns get real depth: a container perspective of 600–1000px, `transform-style: preserve-3d` on the turning element, and `backface-visibility: hidden` on its faces; never imitate a flip
   by squeezing with scaleX.
-- [ ] A wind-up (anticipation) belongs only to the rare branch: before a launch or flip the user deliberately sets off, pull back 5–10% of the travel (or dip to 0.95 scale) over 80–120ms, then go;
-  before anything frequent, that wind-up is pure added latency.
+- [ ] An object drawn as solid (a tilting card, a product view) carries its depth on its surface: layered shadows that deepen as it lifts, a highlight along the top edge, and any
+  pointer-driven tilt held to about 10–15° of rotateX/rotateY under a perspective of 800–1200px — past that the face stops reading as a surface and reads as a billboard instead.
+- [ ] A wind-up (anticipation) belongs only to the rare branch: before a launch or flip the user deliberately sets off, pull back 5–10% of the travel (up to about a quarter of it for a
+  genuinely large launch, or dip to 0.95 scale) over 80–120ms, then go; before anything frequent that wind-up is pure added latency, and a plain button press never gets one — it has
+  nothing to launch.
 - [ ] Cross-fades between images run inside an isolated group with additive blending (`mix-blend-mode: plus-lighter`), or the midpoint washes out as the background shows through both half-transparent
   layers; a group fades through its wrapper, never child by child.
 - [ ] Fade content out with a mask (`mask-image`), never with an overlay painted in the background color — the painted overlay breaks on any other background, dark mode included.
@@ -136,7 +147,8 @@ the checks that confirm the decisions worked. Checked 2026-11-13.
   finish before reflowing.
 - [ ] An element that is traveling or changing shape stays the same element for the entire move; never swap it for a stand-in mid-flight.
 - [ ] Drags track the pointer 1:1 with no easing while held; on release, a spring takes over and carries the release velocity into the settle.
-- [ ] At a drag bound, resistance grows with diminishing returns (rubber-banding) after a small dead zone, instead of a hard stop; on release the element springs back to the bound.
+- [ ] At a drag bound, resistance grows with diminishing returns (rubber-banding) after a small dead zone, instead of a hard stop — offset = (1 − 1/(drag × 0.55 / size + 1)) × size,
+  with drag measured past the bound and size the element's length along that axis; on release the element springs back to the bound.
 
 ## Async feedback and optimistic state
 
@@ -174,3 +186,5 @@ the checks that confirm the decisions worked. Checked 2026-11-13.
 - Frank Thomas & Ollie Johnston, *The Illusion of Life* — Disney's twelve principles of animation (staging, follow-through, squash and stretch, arcs), the root of the physical techniques above.
 - Jon Yablonski, *Laws of UX* (lawsofux.com) — the Doherty threshold and the response-time limits behind the async section.
 - Emil Kowalski's writing on interface animation — the discipline of frequency-based restraint, origin-anchored popovers, and exits shorter than entrances.
+- Ken, ux-motion skill (kenisbuilding.com/resources) — the source of the scoped exit ratios, the rubber-band curve, the like-pop overshoot, and the exact entry/exit easing values carried
+  in `design-polish.md`; that page states no license, so every sentence here is original wording and only its ideas and values are carried over.
